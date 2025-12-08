@@ -7,6 +7,7 @@ from .llm_client import (
     LLMClient,
     LLMClientFactory,
 )
+from .tax_service import TaxCodeService
 
 __all__ = [
     # LLM Client
@@ -14,4 +15,6 @@ __all__ = [
     "GeminiClient",
     "ClaudeClient",
     "LLMClientFactory",
+    # Tax Code Service
+    "TaxCodeService",
 ]

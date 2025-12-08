@@ -1,3 +1,6 @@
-# TODO: Initialize API v1 routes
-# - Import and register all endpoint routers
-# - Configure versioned API routing
+"""
+API v1 module
+"""
+from . import chat, conversations, health
+
+__all__ = ["chat", "conversations", "health"]

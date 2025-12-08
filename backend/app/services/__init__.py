@@ -1,6 +1,7 @@
 """
 Services module exports
 """
+from .citation_extractor import CitationExtractor
 from .llm_client import (
     ClaudeClient,
     GeminiClient,
@@ -17,4 +18,6 @@ __all__ = [
     "LLMClientFactory",
     # Tax Code Service
     "TaxCodeService",
+    # Citation Extractor
+    "CitationExtractor",
 ]

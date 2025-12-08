@@ -28,6 +28,35 @@ class CitedArticle(BaseModel):
     )
 
 
+class Citation(BaseModel):
+    """Detailed citation extracted from text"""
+
+    raw_text: str = Field(
+        ...,
+        description="Original text matched in the document"
+    )
+    article: str = Field(
+        ...,
+        description="Normalized article number"
+    )
+    clause: Optional[str] = Field(
+        None,
+        description="Clause/part number (ნაწილი)"
+    )
+    letter: Optional[str] = Field(
+        None,
+        description="Letter designation (პუნქტი)"
+    )
+    is_valid: bool = Field(
+        ...,
+        description="Whether citation was found in article index"
+    )
+    matsne_url: Optional[str] = Field(
+        None,
+        description="Link to matsne.gov.ge if constructable"
+    )
+
+
 class TaxResponse(BaseModel):
     """Response from tax code query"""
 

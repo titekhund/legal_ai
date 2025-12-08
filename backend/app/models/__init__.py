@@ -5,6 +5,7 @@ from .schemas import (
     ChatMessage,
     ChatRequest,
     ChatResponse,
+    Citation,
     CitedArticle,
     Conversation,
     ConversationDetail,
@@ -17,6 +18,7 @@ from .schemas import (
 
 __all__ = [
     # Tax Code Schemas
+    "Citation",
     "CitedArticle",
     "TaxResponse",
     # Chat Schemas

@@ -1,0 +1,60 @@
+version: '3.8'
+
+# TODO: Implement production docker-compose configuration
+
+services:
+  # Backend API
+  backend:
+    # TODO: Configure backend service
+    # - Build from backend/Dockerfile
+    # - Set environment variables
+    # - Expose port 8000
+    # - Configure health checks
+    # - Set resource limits
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    # ports:
+    #   - "8000:8000"
+    # environment:
+    #   - API_ENV=production
+    # depends_on:
+    #   - postgres
+    #   - redis
+
+  # Frontend
+  frontend:
+    # TODO: Configure frontend service
+    # - Build from frontend directory
+    # - Expose port 3000
+    # - Set environment variables
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    # ports:
+    #   - "3000:3000"
+
+  # PostgreSQL Database
+  postgres:
+    # TODO: Configure PostgreSQL
+    # image: postgres:15-alpine
+    # environment:
+    #   POSTGRES_DB: legal_ai
+    #   POSTGRES_USER: user
+    #   POSTGRES_PASSWORD: password
+    # volumes:
+    #   - postgres_data:/var/lib/postgresql/data
+
+  # Redis (for caching and session management)
+  redis:
+    # TODO: Configure Redis
+    # image: redis:7-alpine
+
+# TODO: Define volumes
+# volumes:
+#   postgres_data:
+
+# TODO: Define networks
+# networks:
+#   default:
+#     name: legal_ai_network

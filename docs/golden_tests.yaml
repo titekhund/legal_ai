@@ -1,0 +1,42 @@
+# Golden Tests for Legal AI System
+# TODO: Define golden test cases for regression testing
+
+golden_tests:
+  - test_id: "tax_query_001"
+    description: "Basic IRC Section 501(c)(3) query"
+    input:
+      query: "What are the requirements for 501(c)(3) tax-exempt status?"
+    expected_output:
+      contains:
+        - "501(c)(3)"
+        - "charitable"
+        - "exempt"
+      citations_count: ">= 1"
+      response_time_ms: "< 5000"
+
+  - test_id: "dispute_query_001"
+    description: "Query about common tax dispute resolutions"
+    input:
+      query: "What are common outcomes in small business tax disputes?"
+    expected_output:
+      contains:
+        - "dispute"
+        - "resolution"
+      citations_count: ">= 2"
+      response_time_ms: "< 5000"
+
+  - test_id: "citation_extraction_001"
+    description: "Verify citation extraction from response"
+    input:
+      query: "Explain IRC Section 162 business expense deductions"
+    expected_output:
+      citations:
+        - source_type: "tax_code"
+          section: "162"
+      response_time_ms: "< 5000"
+
+# TODO: Add more comprehensive test cases
+# - Multi-turn conversations
+# - Edge cases and error conditions
+# - Performance benchmarks
+# - Template generation tests

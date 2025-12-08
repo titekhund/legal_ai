@@ -1,0 +1,36 @@
+# TODO: Add production dependencies
+# Core framework
+# fastapi
+# uvicorn[standard]
+# pydantic
+# pydantic-settings
+
+# LLM and AI
+# anthropic
+# langchain
+# langchain-anthropic
+
+# Vector database
+# pinecone-client
+# chromadb
+# weaviate-client
+
+# Database
+# sqlalchemy
+# alembic
+# psycopg2-binary
+
+# HTTP and async
+# httpx
+# aiohttp
+
+# Utilities
+# python-dotenv
+# python-multipart
+# pyyaml
+
+# Testing (dev)
+# pytest
+# pytest-asyncio
+# pytest-cov
+# httpx

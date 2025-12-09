@@ -14,6 +14,9 @@ import type {
 // Get API base URL from environment variable
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
+// Default request timeout (30 seconds)
+const DEFAULT_TIMEOUT = 30000;
+
 /**
  * Custom error class for API errors
  */
@@ -31,11 +34,21 @@ export class APIClientError extends Error {
 }
 
 /**
- * Generic fetch wrapper with error handling
+ * Create an AbortSignal with timeout
+ */
+function createTimeoutSignal(timeout: number): AbortSignal {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), timeout);
+  return controller.signal;
+}
+
+/**
+ * Generic fetch wrapper with error handling and timeout
  */
 async function fetchAPI<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  timeout: number = DEFAULT_TIMEOUT
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
@@ -46,6 +59,7 @@ async function fetchAPI<T>(
         'Content-Type': 'application/json',
         ...options.headers,
       },
+      signal: options.signal || createTimeoutSignal(timeout),
     });
 
     // Get request ID from response headers
@@ -82,10 +96,20 @@ async function fetchAPI<T>(
       throw error;
     }
 
+    // Handle timeout errors
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new APIClientError(
+        'Request timeout - please try again',
+        408,
+        'TIMEOUT_ERROR'
+      );
+    }
+
     // Network or other errors
     throw new APIClientError(
       error instanceof Error ? error.message : 'Network error',
-      0
+      0,
+      'NETWORK_ERROR'
     );
   }
 }

@@ -4,8 +4,10 @@
 
 'use client';
 
-import React from 'react';
-import { cn } from '@/lib/utils';
+import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { cn, formatDate } from '@/lib/utils';
 import type { Message } from '@/lib/types';
 
 export interface MessageBubbleProps {
@@ -13,23 +15,71 @@ export interface MessageBubbleProps {
   isUser: boolean;
 }
 
+/**
+ * Highlight article citations in text and make them clickable
+ */
+const highlightCitations = (text: string): string => {
+  // Pattern to match Georgian article citations
+  const citationPattern = /მუხლი\s+(\d+(?:\.\d+)?(?:\.[ა-ჰ])?)/g;
+
+  return text.replace(citationPattern, (match, articleNum) => {
+    const url = `https://matsne.gov.ge/ka/document/view/1043717#ARTICLE_${articleNum}`;
+    return `[**${match}**](${url})`;
+  });
+};
+
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isUser }) => {
+  const [showTimestamp, setShowTimestamp] = useState(false);
+
+  // Process content to highlight citations for assistant messages
+  const processedContent = !isUser ? highlightCitations(message.content) : message.content;
+
   return (
     <div
       className={cn(
-        'flex w-full mb-4',
+        'flex w-full mb-4 group',
         isUser ? 'justify-end' : 'justify-start'
       )}
+      onMouseEnter={() => setShowTimestamp(true)}
+      onMouseLeave={() => setShowTimestamp(false)}
     >
       <div
         className={cn(
-          'max-w-[80%] rounded-lg px-4 py-3',
+          'max-w-[80%] rounded-lg px-4 py-3 relative',
           isUser
             ? 'bg-primary text-white'
             : 'bg-white border border-gray-200 text-text'
         )}
       >
-        <div className="whitespace-pre-wrap break-words">{message.content}</div>
+        {/* Timestamp on hover */}
+        {showTimestamp && (
+          <div
+            className={cn(
+              'absolute -top-6 text-xs text-text-light',
+              isUser ? 'right-0' : 'left-0'
+            )}
+          >
+            {formatDate(message.timestamp)}
+          </div>
+        )}
+
+        {/* Message content */}
+        {!isUser ? (
+          <div
+            className={cn(
+              'prose prose-sm max-w-none',
+              'prose-p:my-2 prose-ul:my-2 prose-ol:my-2',
+              'prose-a:text-primary prose-a:font-semibold prose-a:no-underline hover:prose-a:underline',
+              'prose-strong:text-accent prose-strong:font-bold'
+            )}
+          >
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {processedContent}
+            </ReactMarkdown>
+          </div>
+        ) : (
+          <div className="whitespace-pre-wrap break-words">{message.content}</div>
+        )}
 
         {/* Show sources indicator for assistant messages */}
         {!isUser && message.sources && message.sources.tax_articles.length > 0 && (

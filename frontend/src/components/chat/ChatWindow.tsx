@@ -75,10 +75,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             />
 
             {/* Show citations for assistant messages */}
-            {message.role === 'assistant' && message.sources && (
+            {message.role === 'assistant' && (
               <div className="mb-4">
                 <CitationPanel
-                  sources={message.sources}
+                  sources={message.sources || null}
                   isOpen={openCitationIndex === index}
                   onToggle={() =>
                     setOpenCitationIndex(openCitationIndex === index ? null : index)
@@ -114,11 +114,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       <ChatInput
         onSend={sendMessage}
         disabled={isLoading}
-        placeholder={
-          language === 'ka'
-            ? 'დაწერეთ თქვენი კითხვა...'
-            : 'Type your question...'
-        }
       />
     </div>
   );

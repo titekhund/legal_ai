@@ -1,10 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // TODO: Add Next.js configuration
-  // - API routes configuration
-  // - Environment variables
-  // - Image optimization settings
   reactStrictMode: true,
+
+  // Enable standalone output for Docker
+  output: 'standalone',
+
+  // Configure API endpoint
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+    NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME || 'საგადასახადო კოდექსის AI ასისტენტი',
+  },
 }
 
 module.exports = nextConfig

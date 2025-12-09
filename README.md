@@ -32,24 +32,74 @@ legal_ai/
 - Python 3.11+ (for local backend development)
 
 ### Development Setup
-```bash
-# TODO: Add setup instructions
 
-# 1. Clone the repository
+#### Using Docker (Recommended)
+
+1. **Clone the repository**
+```bash
 git clone <repository-url>
 cd legal_ai
+```
 
-# 2. Copy environment variables
-cp backend/.env.example backend/.env
-# Edit backend/.env with your API keys
+2. **Create environment file**
+```bash
+# Create .env file in the root directory
+cat > .env << EOF
+# API Keys
+GEMINI_API_KEY=your_gemini_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
 
-# 3. Start services with Docker Compose
-docker-compose -f infra/docker-compose.dev.yml up
+# Environment
+API_ENV=development
+LOG_LEVEL=INFO
+NODE_ENV=production
 
-# 4. Access the application
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:8000
-# API Documentation: http://localhost:8000/docs
+# URLs
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_APP_NAME=საგადასახადო კოდექსის AI ასისტენტი
+
+# Database (default values for development)
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/legal_ai
+REDIS_URL=redis://redis:6379
+EOF
+
+# Edit .env with your actual API keys
+nano .env  # or use your preferred editor
+```
+
+3. **Start all services with Docker Compose**
+```bash
+# Build and start all services (backend, frontend, postgres, redis)
+docker-compose up --build
+
+# Or run in detached mode
+docker-compose up -d --build
+```
+
+4. **Access the application**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
+- PostgreSQL: localhost:5432
+- Redis: localhost:6379
+
+5. **View logs**
+```bash
+# All services
+docker-compose logs -f
+
+# Specific service
+docker-compose logs -f backend
+docker-compose logs -f frontend
+```
+
+6. **Stop services**
+```bash
+# Stop containers
+docker-compose down
+
+# Stop and remove volumes (WARNING: deletes database data)
+docker-compose down -v
 ```
 
 ## Documentation
@@ -61,23 +111,72 @@ docker-compose -f infra/docker-compose.dev.yml up
 
 ## Development
 
-### Backend Development
+### Backend Development (Local)
+
+For local development without Docker:
+
 ```bash
-# TODO: Add backend development instructions
+# Navigate to backend directory
 cd backend
+
+# Create virtual environment
 python -m venv venv
 source venv/bin/activate  # or `venv\Scripts\activate` on Windows
+
+# Install dependencies
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+
+# Create .env file
+cp .env.example .env  # Edit with your API keys
+
+# Run development server with auto-reload
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Run with specific log level
+uvicorn app.main:app --reload --log-level debug
 ```
 
-### Frontend Development
+**Backend Environment Variables:**
 ```bash
-# TODO: Add frontend development instructions
-cd frontend
-npm install
-npm run dev
+GEMINI_API_KEY=your_gemini_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
+API_ENV=development
+LOG_LEVEL=INFO
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/legal_ai
+REDIS_URL=redis://localhost:6379
 ```
+
+### Frontend Development (Local)
+
+For local development without Docker:
+
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Create .env.local file
+cat > .env.local << EOF
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_APP_NAME=საგადასახადო კოდექსის AI ასისტენტი
+EOF
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
+
+**Access the applications:**
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8000
+- API Docs: http://localhost:8000/docs
 
 ### Running Tests
 ```bash

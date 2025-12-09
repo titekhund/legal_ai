@@ -1,42 +1,56 @@
-# Golden Tests for Legal AI System
-# TODO: Define golden test cases for regression testing
+# Golden test cases for quality assurance
+# Run these manually or in CI to verify system quality
 
-golden_tests:
-  - test_id: "tax_query_001"
-    description: "Basic IRC Section 501(c)(3) query"
-    input:
-      query: "What are the requirements for 501(c)(3) tax-exempt status?"
-    expected_output:
-      contains:
-        - "501(c)(3)"
-        - "charitable"
-        - "exempt"
-      citations_count: ">= 1"
-      response_time_ms: "< 5000"
+tax_code_tests:
+  - id: tax_001
+    question: "რა არის დღგ-ს განაკვეთი საქართველოში?"
+    expected_articles: ["166"]
+    expected_contains: ["18%"]
+    language: ka
 
-  - test_id: "dispute_query_001"
-    description: "Query about common tax dispute resolutions"
-    input:
-      query: "What are common outcomes in small business tax disputes?"
-    expected_output:
-      contains:
-        - "dispute"
-        - "resolution"
-      citations_count: ">= 2"
-      response_time_ms: "< 5000"
+  - id: tax_002
+    question: "ვინ უნდა დარეგისტრირდეს დღგ-ს გადამხდელად?"
+    expected_articles: ["165"]
+    expected_contains: ["100,000", "ლარი"]
+    language: ka
 
-  - test_id: "citation_extraction_001"
-    description: "Verify citation extraction from response"
-    input:
-      query: "Explain IRC Section 162 business expense deductions"
-    expected_output:
-      citations:
-        - source_type: "tax_code"
-          section: "162"
-      response_time_ms: "< 5000"
+  - id: tax_003
+    question: "რა არის მიკრო ბიზნესის შემოსავლის ზღვარი?"
+    expected_articles: ["84", "85", "86", "87"]
+    expected_contains: ["30,000"]
+    language: ka
 
-# TODO: Add more comprehensive test cases
-# - Multi-turn conversations
-# - Edge cases and error conditions
-# - Performance benchmarks
-# - Template generation tests
+  - id: tax_004
+    question: "როგორ იბეგრება ფიზიკური პირის მიერ ავტომობილის გაყიდვა?"
+    expected_articles: ["82", "81"]
+    expected_contains: ["6 თვე"]
+    language: ka
+
+  - id: tax_005
+    question: "რა არის მოგების გადასახადის განაკვეთი?"
+    expected_articles: ["97", "98"]
+    expected_contains: ["15%"]
+    language: ka
+
+  - id: tax_006
+    question: "What is the VAT rate in Georgia?"
+    expected_articles: ["166"]
+    expected_contains: ["18%"]
+    language: en
+
+  - id: tax_007
+    question: "როდის თავისუფლდება ბინის რეალიზაცია საშემოსავლო გადასახადისგან?"
+    expected_articles: ["82"]
+    expected_contains: ["2 წელი", "წელზე მეტ"]
+    language: ka
+
+edge_cases:
+  - id: edge_001
+    question: "რა არის ბიტკოინის გადასახადი?"
+    should_mention: "კოდექსში პირდაპირ არ არის განსაზღვრული"
+    language: ka
+
+  - id: edge_002
+    question: "Hello"
+    should_respond: true
+    should_not_error: true

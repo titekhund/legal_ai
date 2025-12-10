@@ -1,8 +1,9 @@
 """
 Pydantic schemas for request/response validation
 """
+from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -301,20 +302,201 @@ class DisputeCase(BaseModel):
     )
 
 
-class DocumentTemplate(BaseModel):
-    """Document template (Phase 3)"""
+# ============================================================================
+# Document Generation Schemas (Phase 3)
+# ============================================================================
 
-    template_id: str = Field(
+
+class DocumentType(BaseModel):
+    """Document type definition"""
+
+    id: str = Field(
+        ...,
+        description="Document type ID (e.g., 'nda', 'employment_contract')"
+    )
+    name_ka: str = Field(
+        ...,
+        description="Georgian name"
+    )
+    name_en: str = Field(
+        ...,
+        description="English name"
+    )
+    description_ka: str = Field(
+        ...,
+        description="Georgian description"
+    )
+    description_en: Optional[str] = Field(
+        None,
+        description="English description"
+    )
+    required_fields: List[str] = Field(
+        default_factory=list,
+        description="Required variable names"
+    )
+    optional_fields: List[str] = Field(
+        default_factory=list,
+        description="Optional variable names"
+    )
+
+
+class TemplateVariable(BaseModel):
+    """Variable definition in template"""
+
+    name: str = Field(
+        ...,
+        description="Variable name (snake_case)"
+    )
+    label_ka: str = Field(
+        ...,
+        description="Georgian label for UI"
+    )
+    label_en: str = Field(
+        ...,
+        description="English label for UI"
+    )
+    type: str = Field(
+        ...,
+        description="Variable type: 'text', 'date', 'number', 'choice', 'boolean'"
+    )
+    required: bool = Field(
+        default=True,
+        description="Whether variable is required"
+    )
+    default: Optional[str] = Field(
+        None,
+        description="Default value if not provided"
+    )
+    choices: Optional[List[str]] = Field(
+        None,
+        description="Available choices for 'choice' type"
+    )
+    placeholder_ka: Optional[str] = Field(
+        None,
+        description="Georgian placeholder text"
+    )
+    placeholder_en: Optional[str] = Field(
+        None,
+        description="English placeholder text"
+    )
+    validation_pattern: Optional[str] = Field(
+        None,
+        description="Regex pattern for validation"
+    )
+
+
+class DocumentTemplate(BaseModel):
+    """Complete document template"""
+
+    id: str = Field(
         ...,
         description="Template identifier"
     )
-    name: str = Field(
+    type: str = Field(
         ...,
-        description="Template name"
+        description="Document type ID"
+    )
+    name_ka: str = Field(
+        ...,
+        description="Georgian template name"
+    )
+    name_en: str = Field(
+        ...,
+        description="English template name"
+    )
+    language: str = Field(
+        ...,
+        description="Template language: 'ka' or 'en'"
+    )
+    content: str = Field(
+        ...,
+        description="Template content with {{variable}} placeholders"
+    )
+    variables: List[TemplateVariable] = Field(
+        default_factory=list,
+        description="Template variables"
+    )
+    related_articles: List[str] = Field(
+        default_factory=list,
+        description="Related tax code articles"
     )
     category: Optional[str] = Field(
         None,
         description="Template category"
+    )
+    tags: List[str] = Field(
+        default_factory=list,
+        description="Search tags"
+    )
+
+
+class DocumentGenerationRequest(BaseModel):
+    """Request to generate a document"""
+
+    document_type: str = Field(
+        ...,
+        description="Document type ID"
+    )
+    variables: Dict[str, Any] = Field(
+        ...,
+        description="Variable values for template"
+    )
+    language: str = Field(
+        default="ka",
+        description="Output language: 'ka' or 'en'"
+    )
+    include_legal_references: bool = Field(
+        default=True,
+        description="Include relevant tax code article references"
+    )
+    template_id: Optional[str] = Field(
+        None,
+        description="Specific template ID to use (optional)"
+    )
+    format: str = Field(
+        default="markdown",
+        description="Output format: 'markdown', 'html', or 'plain'"
+    )
+
+
+class GeneratedDocument(BaseModel):
+    """Generated document response"""
+
+    content: str = Field(
+        ...,
+        description="Generated document content"
+    )
+    document_type: str = Field(
+        ...,
+        description="Document type that was generated"
+    )
+    template_used: str = Field(
+        ...,
+        description="Template ID that was used"
+    )
+    cited_articles: List[str] = Field(
+        default_factory=list,
+        description="Tax code articles referenced"
+    )
+    variables_used: Dict[str, Any] = Field(
+        ...,
+        description="Variables and their values"
+    )
+    disclaimer: str = Field(
+        ...,
+        description="Legal disclaimer"
+    )
+    format: str = Field(
+        default="markdown",
+        description="Document format"
+    )
+    generated_at: str = Field(
+        default_factory=lambda: datetime.utcnow().isoformat(),
+        description="ISO timestamp of generation"
+    )
+    warnings: List[str] = Field(
+        default_factory=list,
+        description="Any warnings about the generation"
     )
 
 

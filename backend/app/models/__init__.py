@@ -11,13 +11,17 @@ from .schemas import (
     ConversationDetail,
     ConversationList,
     DisputeCase,
+    DocumentGenerationRequest,
     DocumentTemplate,
+    DocumentType,
     ErrorResponse,
+    GeneratedDocument,
     HealthCheckResponse,
     QueryMode,
     ResponseSources,
     ServiceStatus,
     TaxResponse,
+    TemplateVariable,
     UnifiedResponse,
 )
 
@@ -30,7 +34,12 @@ __all__ = [
     "TaxResponse",
     # Dispute Schemas
     "DisputeCase",
+    # Document Generation Schemas
+    "DocumentType",
+    "TemplateVariable",
     "DocumentTemplate",
+    "DocumentGenerationRequest",
+    "GeneratedDocument",
     # Chat Schemas
     "ChatMessage",
     "ChatRequest",

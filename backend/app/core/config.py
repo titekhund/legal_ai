@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     gemini_api_key: str = Field(..., description="Google Gemini API key (required)")
     claude_api_key: Optional[str] = Field(None, description="Anthropic Claude API key (optional fallback)")
 
+    # Admin Access
+    admin_api_key: Optional[str] = Field(None, description="Admin API key for management endpoints")
+
     # Environment
     environment: str = Field("dev", description="Environment: dev, staging, or prod")
 

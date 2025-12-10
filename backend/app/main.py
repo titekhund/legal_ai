@@ -11,7 +11,7 @@ from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from app.api.v1 import chat, conversations, documents, health
+from app.api.v1 import admin, chat, conversations, documents, health
 from app.core import (
     get_logger,
     get_settings,
@@ -100,6 +100,7 @@ async def lifespan(app: FastAPI):
     chat.set_tax_service(tax_service)
     chat.set_orchestrator(orchestrator)
     documents.set_document_service(document_service)
+    admin.set_services(tax_service, dispute_service, document_service)
 
     logger.info(f"Legal AI application started in {settings.environment} mode")
 
@@ -136,6 +137,10 @@ app = FastAPI(
         {
             "name": "documents",
             "description": "Generate legal documents from templates | იურიდიული დოკუმენტების გენერირება შაბლონებიდან"
+        },
+        {
+            "name": "admin",
+            "description": "Admin endpoints for content management | ადმინისტრატორის ინტერფეისი"
         }
     ],
     responses={
@@ -363,6 +368,12 @@ app.include_router(
     documents.router,
     prefix="/v1",
     tags=["documents"]
+)
+
+app.include_router(
+    admin.router,
+    prefix="/v1",
+    tags=["admin"]
 )
 
 

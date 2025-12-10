@@ -11,7 +11,7 @@ from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from app.api.v1 import chat, conversations, health
+from app.api.v1 import chat, conversations, documents, health
 from app.core import (
     get_logger,
     get_settings,
@@ -19,7 +19,7 @@ from app.core import (
     set_request_id,
     setup_logging,
 )
-from app.services import DisputeService, Orchestrator, TaxCodeService
+from app.services import DisputeService, DocumentService, Orchestrator, TaxCodeService
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -36,6 +36,7 @@ limiter = Limiter(
 # Global service instances
 tax_service: TaxCodeService = None
 dispute_service: DisputeService = None
+document_service: DocumentService = None
 orchestrator: Orchestrator = None
 
 
@@ -76,6 +77,17 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to initialize Dispute Service: {e}")
         logger.warning("Dispute Service will not be available")
 
+    # Initialize document service
+    document_service = DocumentService()
+
+    try:
+        logger.info("Initializing Document Service...")
+        await document_service.initialize()
+        logger.info("Document Service initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize Document Service: {e}")
+        logger.warning("Document Service will not be available")
+
     # Initialize orchestrator
     orchestrator = Orchestrator(
         tax_service=tax_service,
@@ -87,6 +99,7 @@ async def lifespan(app: FastAPI):
     health.set_tax_service(tax_service)
     chat.set_tax_service(tax_service)
     chat.set_orchestrator(orchestrator)
+    documents.set_document_service(document_service)
 
     logger.info(f"Legal AI application started in {settings.environment} mode")
 
@@ -119,6 +132,10 @@ app = FastAPI(
         {
             "name": "conversations",
             "description": "Manage conversation history | საუბრების ისტორიის მართვა"
+        },
+        {
+            "name": "documents",
+            "description": "Generate legal documents from templates | იურიდიული დოკუმენტების გენერირება შაბლონებიდან"
         }
     ],
     responses={
@@ -340,6 +357,12 @@ app.include_router(
     conversations.router,
     prefix="/v1",
     tags=["conversations"]
+)
+
+app.include_router(
+    documents.router,
+    prefix="/v1",
+    tags=["documents"]
 )
 
 

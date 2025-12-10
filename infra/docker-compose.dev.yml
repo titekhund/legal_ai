@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ../backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend/app:/app/app
+      - ../data:/app/data
+    env_file:
+      - ../backend/.env
+    environment:
+      - ENVIRONMENT=dev
+
+  frontend:
+    build: ../frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../frontend/src:/app/src
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000

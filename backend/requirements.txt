@@ -1,0 +1,33 @@
+# Core Framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+slowapi==0.1.9
+
+# LLM and AI
+google-generativeai==0.8.0
+anthropic==0.39.0
+
+# HTTP and Async
+httpx==0.26.0
+
+# Document Processing
+python-multipart==0.0.6
+pypdf==4.0.1
+tqdm==4.66.1
+pyyaml==6.0.1
+python-docx==1.1.0
+
+# Logging
+structlog==24.1.0
+
+# Vector Store and Embeddings
+faiss-cpu==1.7.4
+sentence-transformers==2.2.2
+rank-bm25==0.2.2
+numpy==1.24.3
+
+# Testing
+pytest==7.4.4
+pytest-asyncio==0.23.3

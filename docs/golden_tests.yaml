@@ -1,0 +1,246 @@
+# Golden test cases for quality assurance
+# Run these manually or in CI to verify system quality
+
+tax_code_tests:
+  - id: tax_001
+    question: "რა არის დღგ-ს განაკვეთი საქართველოში?"
+    expected_articles: ["166"]
+    expected_contains: ["18%"]
+    language: ka
+
+  - id: tax_002
+    question: "ვინ უნდა დარეგისტრირდეს დღგ-ს გადამხდელად?"
+    expected_articles: ["165"]
+    expected_contains: ["100,000", "ლარი"]
+    language: ka
+
+  - id: tax_003
+    question: "რა არის მიკრო ბიზნესის შემოსავლის ზღვარი?"
+    expected_articles: ["84", "85", "86", "87"]
+    expected_contains: ["30,000"]
+    language: ka
+
+  - id: tax_004
+    question: "როგორ იბეგრება ფიზიკური პირის მიერ ავტომობილის გაყიდვა?"
+    expected_articles: ["82", "81"]
+    expected_contains: ["6 თვე"]
+    language: ka
+
+  - id: tax_005
+    question: "რა არის მოგების გადასახადის განაკვეთი?"
+    expected_articles: ["97", "98"]
+    expected_contains: ["15%"]
+    language: ka
+
+  - id: tax_006
+    question: "What is the VAT rate in Georgia?"
+    expected_articles: ["166"]
+    expected_contains: ["18%"]
+    language: en
+
+  - id: tax_007
+    question: "როდის თავისუფლდება ბინის რეალიზაცია საშემოსავლო გადასახადისგან?"
+    expected_articles: ["82"]
+    expected_contains: ["2 წელი", "წელზე მეტ"]
+    language: ka
+
+edge_cases:
+  - id: edge_001
+    question: "რა არის ბიტკოინის გადასახადი?"
+    should_mention: "კოდექსში პირდაპირ არ არის განსაზღვრული"
+    language: ka
+
+  - id: edge_002
+    question: "Hello"
+    should_respond: true
+    should_not_error: true
+
+dispute_tests:
+  - id: dispute_001
+    question: "როგორ განიმარტა დღგ-ის ჩათვლის უფლება სასამართლო პრაქტიკაში?"
+    mode: dispute
+    should_cite_cases: true
+    expected_mentions_articles: ["178", "179"]
+    language: ka
+
+  - id: dispute_002
+    question: "რა პრეცედენტები არსებობს ურთიერთდამოკიდებულ პირებთან დაკავშირებით?"
+    mode: dispute
+    should_cite_cases: true
+    expected_mentions_articles: ["19"]
+    language: ka
+
+  - id: dispute_003
+    question: "დავების პრაქტიკა საწარმოო საქმიანობის განმარტებასთან დაკავშირებით"
+    mode: dispute
+    should_cite_cases: true
+    expected_contains: ["საწარმოო", "საქმიანობა"]
+    language: ka
+
+  - id: dispute_004
+    question: "როგორ წყდება დავები გადასახადის დარიცხვის ვადასთან დაკავშირებით?"
+    mode: dispute
+    should_cite_cases: true
+    expected_contains: ["დარიცხვა", "ვადა"]
+    language: ka
+
+  - id: dispute_005
+    question: "რა გადაწყვეტილებები არსებობს საგადასახადო შეღავათების შესახებ?"
+    mode: dispute
+    should_cite_cases: true
+    expected_contains: ["შეღავათ"]
+    language: ka
+
+cross_container_tests:
+  - id: cross_001
+    question: "რა არის დღგ-ის განაკვეთი და როგორ განიმარტა ეს სასამართლოში?"
+    mode: auto
+    should_use_both: ["tax", "dispute"]
+    expected_mentions_articles: ["166"]
+    should_cite_cases: false  # Should classify as tax due to direct question about rate
+    language: ka
+
+  - id: cross_002
+    question: "დავების საბჭოს გადაწყვეტილებები მუხლი 168-თან დაკავშირებით"
+    mode: auto
+    should_use_both: ["tax", "dispute"]
+    expected_mentions_articles: ["168"]
+    should_cite_cases: true  # Should classify as dispute due to "დავების საბჭო"
+    language: ka
+
+  - id: cross_003
+    question: "როგორია საშემოსავლო გადასახადის პრაქტიკა ფიზიკური პირებისთვის?"
+    mode: auto
+    should_use_both: ["tax", "dispute"]
+    expected_contains: ["საშემოსავლო", "ფიზიკური"]
+    language: ka
+
+  - id: cross_004
+    question: "მუხლი 97 და მასთან დაკავშირებული სასამართლო გადაწყვეტილებები"
+    mode: auto
+    should_use_both: ["tax", "dispute"]
+    expected_mentions_articles: ["97"]
+    language: ka
+
+  - id: cross_005
+    question: "გასაჩივრებული გადაწყვეტილებები დღგ-ის ჩათვლასთან დაკავშირებით მუხლი 178"
+    mode: auto
+    should_use_both: ["tax", "dispute"]
+    expected_mentions_articles: ["178"]
+    should_cite_cases: true
+    language: ka
+
+document_tests:
+  - id: doc_001
+    type: nda
+    variables:
+      party_a_name: "შპს ტესტი"
+      party_b_name: "შპს მეორე"
+      effective_date: "2024-01-01"
+      confidential_period_months: 12
+      confidentiality_purpose: "საქმიანი თანამშრომლობა"
+      jurisdiction: "საქართველო"
+    expected_contains:
+      - "შპს ტესტი"
+      - "შპს მეორე"
+      - "12"
+      - "2024-01-01"
+    should_have_disclaimer: true
+    should_have_signature_blocks: true
+    language: ka
+
+  - id: doc_002
+    type: employment_contract
+    variables:
+      employer_name: "შპს დამსაქმებელი"
+      employee_name: "გიორგი თესტაშვილი"
+      position: "დეველოპერი"
+      salary: "5000"
+      start_date: "2024-02-01"
+      work_schedule: "09:00-18:00, ორშაბათი-პარასკევი"
+      probation_period_months: 3
+    expected_contains:
+      - "შრომითი ხელშეკრულება"
+      - "შპს დამსაქმებელი"
+      - "გიორგი თესტაშვილი"
+      - "დეველოპერი"
+      - "5000"
+    should_cite_articles: true  # Should reference Article 82
+    should_have_disclaimer: true
+    expected_mentions_articles: ["82"]  # Income tax article
+    language: ka
+
+  - id: doc_003
+    type: board_resolution
+    variables:
+      company_name: "შპს სატესტო კომპანია"
+      resolution_date: "2024-03-15"
+      resolution_number: "001/2024"
+      resolution_subject: "ახალი თანამშრომლის დაქირავება"
+      resolution_text: "დამტკიცდა ახალი თანამშრომლის დაქირავება დეველოპერის პოზიციაზე"
+      board_members: "გიორგი იმედაშვილი, მარიამ მეტრეველი"
+    expected_contains:
+      - "დირექტორთა საბჭოს დადგენილება"
+      - "შპს სატესტო კომპანია"
+      - "001/2024"
+      - "დამტკიცდა"
+    should_have_disclaimer: true
+    should_have_signature_blocks: true
+    language: ka
+
+  - id: doc_004
+    type: service_agreement
+    variables:
+      service_provider: "შპს IT სერვისები"
+      service_client: "შპს მომხმარებელი"
+      service_description: "ვებ აპლიკაციის შემუშავება"
+      service_fee: "10000"
+      agreement_date: "2024-04-01"
+      service_duration: "6 თვე"
+    expected_contains:
+      - "მომსახურების ხელშეკრულება"
+      - "შპს IT სერვისები"
+      - "10000"
+      - "ვებ აპლიკაციის შემუშავება"
+    should_cite_articles: true  # Should reference Article 98 (VAT)
+    should_have_disclaimer: true
+    expected_mentions_articles: ["98"]
+    language: ka
+
+  - id: doc_005
+    type: loan_agreement
+    variables:
+      lender_name: "გიორგი დამსესხებელი"
+      borrower_name: "მარიამ მსესხებელი"
+      loan_amount: "50000"
+      interest_rate: "10"
+      loan_date: "2024-05-01"
+      repayment_date: "2025-05-01"
+      repayment_terms: "თვიურად თანაბარი ნაწილებით"
+    expected_contains:
+      - "სესხის ხელშეკრულება"
+      - "50000"
+      - "10"
+      - "2024-05-01"
+    should_have_disclaimer: true
+    should_have_signature_blocks: true
+    language: ka
+
+  - id: doc_006
+    type: shareholder_agreement
+    variables:
+      company_name: "შპს პარტნიორები"
+      shareholder1_name: "გიორგი პირველი"
+      shareholder1_shares: "60"
+      shareholder2_name: "ნინო მეორე"
+      shareholder2_shares: "40"
+      agreement_date: "2024-06-01"
+    expected_contains:
+      - "პარტნიორთა შეთანხმება"
+      - "შპს პარტნიორები"
+      - "60"
+      - "40"
+    should_cite_articles: true  # Should reference Article 97 (Profit tax)
+    should_have_disclaimer: true
+    expected_mentions_articles: ["97"]
+    language: ka

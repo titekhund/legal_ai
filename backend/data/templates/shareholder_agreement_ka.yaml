@@ -1,0 +1,101 @@
+id: shareholder_agreement_ka
+type: shareholder_agreement
+name_ka: პარტნიორთა შეთანხმება
+name_en: Shareholder Agreement
+language: ka
+category: კორპორატიული დოკუმენტები
+tags:
+  - პარტნიორები
+  - აქციონერები
+  - კორპორატიული
+  - წილები
+
+variables:
+  - name: company_name
+    label_ka: კომპანიის სახელი
+    label_en: Company Name
+    type: text
+    required: true
+
+  - name: shareholder1_name
+    label_ka: პირველი პარტნიორის სახელი
+    label_en: First Shareholder Name
+    type: text
+    required: true
+
+  - name: shareholder1_share
+    label_ka: პირველი პარტნიორის წილი (%)
+    label_en: First Shareholder Share (%)
+    type: number
+    required: true
+
+  - name: shareholder2_name
+    label_ka: მეორე პარტნიორის სახელი
+    label_en: Second Shareholder Name
+    type: text
+    required: true
+
+  - name: shareholder2_share
+    label_ka: მეორე პარტნიორის წილი (%)
+    label_en: Second Shareholder Share (%)
+    type: number
+    required: true
+
+  - name: agreement_date
+    label_ka: შეთანხმების თარიღი
+    label_en: Agreement Date
+    type: date
+    required: true
+
+related_articles:
+  - "97"  # მოგების გადასახადი
+
+content: |
+  # პარტნიორთა შეთანხმება
+
+  **კომპანია:** {{company_name}}
+  **თარიღი:** {{agreement_date}}
+
+  ## მხარეები
+
+  **პირველი პარტნიორი:** {{shareholder1_name}}
+  წილი: {{shareholder1_share}}%
+
+  **მეორე პარტნიორი:** {{shareholder2_name}}
+  წილი: {{shareholder2_share}}%
+
+  ## 1. შეთანხმების საგანი
+
+  პარტნიორები თანხმდებიან კომპანიის {{company_name}} ერთობლივ მართვაზე ზემოაღნიშნული წილების შესაბამისად.
+
+  ## 2. პარტნიორთა უფლებები
+
+  - წილის პროპორციულად მონაწილეობა მოგების განაწილებაში
+  - გადაწყვეტილებების მიღებაში მონაწილეობა
+  - კომპანიის საქმიანობის შესახებ ინფორმაციის მიღება
+
+  ## 3. პარტნიორთა ვალდებულებები
+
+  - ხელი შეუწყონ კომპანიის განვითარებას
+  - არ მიიყენონ ზიანი კომპანიის ინტერესებს
+  - დაიცვან კონფიდენციალურობა
+
+  ## 4. მოგების განაწილება
+
+  მოგება ნაწილდება წილების შესაბამისად საგადასახადო ვალდებულებების შესრულების შემდეგ (მოგების გადასახადი 15% - მუხლი 97).
+
+  ## 5. წილის გადაცემა
+
+  წილის გადაცემა მესამე პირზე შესაძლებელია მხოლოდ სხვა პარტნიორის თანხმობით.
+
+  ---
+
+  ## ხელმოწერები
+
+  **პირველი პარტნიორი:**
+  {{shareholder1_name}}
+  ხელმოწერა: _________________
+
+  **მეორე პარტნიორი:**
+  {{shareholder2_name}}
+  ხელმოწერა: _________________

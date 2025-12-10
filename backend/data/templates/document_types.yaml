@@ -1,0 +1,88 @@
+- id: nda
+  name_ka: კონფიდენციალურობის ხელშეკრულება
+  name_en: Non-Disclosure Agreement
+  description_ka: ხელშეკრულება კონფიდენციალური ინფორმაციის დაცვისა და საიდუმლოების შენარჩუნებისთვის საქმიანი ურთიერთობების დროს
+  description_en: Agreement to protect confidential information and maintain secrecy during business relationships
+  required_fields:
+    - party_a_name
+    - party_b_name
+    - effective_date
+    - confidential_period_months
+    - confidentiality_purpose
+  optional_fields:
+    - jurisdiction
+
+- id: employment_contract
+  name_ka: შრომითი ხელშეკრულება
+  name_en: Employment Contract
+  description_ka: ოფიციალური ხელშეკრულება დამსაქმებელსა და დასაქმებულს შორის, რომელიც განსაზღვრავს შრომითი ურთიერთობის პირობებს
+  description_en: Official contract between employer and employee defining employment terms
+  required_fields:
+    - employer_name
+    - employer_id_number
+    - employee_name
+    - employee_id_number
+    - position
+    - start_date
+    - salary
+    - workplace_address
+  optional_fields:
+    - work_schedule
+    - probation_period_months
+
+- id: board_resolution
+  name_ka: დირექტორთა საბჭოს დადგენილება
+  name_en: Board of Directors Resolution
+  description_ka: კომპანიის დირექტორთა საბჭოს ოფიციალური გადაწყვეტილება მნიშვნელოვან საკითხებზე
+  description_en: Official decision of company's board of directors on important matters
+  required_fields:
+    - company_name
+    - resolution_date
+    - resolution_number
+    - resolution_subject
+    - resolution_text
+  optional_fields:
+    - attendees
+
+- id: shareholder_agreement
+  name_ka: პარტნიორთა შეთანხმება
+  name_en: Shareholder Agreement
+  description_ka: შეთანხმება კომპანიის პარტნიორებს/აქციონერებს შორის წილების, უფლებებისა და ვალდებულებების განსაზღვრის შესახებ
+  description_en: Agreement between company partners/shareholders regarding shares, rights and obligations
+  required_fields:
+    - company_name
+    - shareholder1_name
+    - shareholder1_share
+    - shareholder2_name
+    - shareholder2_share
+    - agreement_date
+  optional_fields: []
+
+- id: service_agreement
+  name_ka: მომსახურების ხელშეკრულება
+  name_en: Service Agreement
+  description_ka: ხელშეკრულება მომსახურების მიწოდების პირობების, საფასურისა და მხარეთა ვალდებულებების განსაზღვრის შესახებ
+  description_en: Contract defining service delivery terms, fees and party obligations
+  required_fields:
+    - provider_name
+    - client_name
+    - service_description
+    - service_fee
+    - agreement_date
+  optional_fields:
+    - duration_months
+
+- id: loan_agreement
+  name_ka: სესხის ხელშეკრულება
+  name_en: Loan Agreement
+  description_ka: ხელშეკრულება სესხის გაცემის, დაბრუნების პირობებისა და საპროცენტო განაკვეთის შესახებ
+  description_en: Agreement on loan issuance, repayment terms and interest rate
+  required_fields:
+    - lender_name
+    - borrower_name
+    - loan_amount
+    - interest_rate
+    - loan_date
+    - repayment_date
+  optional_fields:
+    - repayment_terms

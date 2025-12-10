@@ -9,15 +9,16 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.core import LLMError, get_logger
-from app.models import CitedArticle
-from app.services import TaxCodeService
+from app.models import CitedArticle, QueryMode
+from app.services import Orchestrator, TaxCodeService
 from app.storage import get_conversation_store
 
 logger = get_logger(__name__)
 router = APIRouter()
 
-# Global service instance (will be set from main.py)
+# Global service instances (will be set from main.py)
 _tax_service: Optional[TaxCodeService] = None
+_orchestrator: Optional[Orchestrator] = None
 
 
 def set_tax_service(service: TaxCodeService):
@@ -31,6 +32,17 @@ def get_tax_service() -> TaxCodeService:
     return _tax_service
 
 
+def set_orchestrator(orchestrator: Orchestrator):
+    """Set the orchestrator instance"""
+    global _orchestrator
+    _orchestrator = orchestrator
+
+
+def get_orchestrator() -> Orchestrator:
+    """Get the orchestrator instance"""
+    return _orchestrator
+
+
 # ============================================================================
 # Request/Response Models
 # ============================================================================
@@ -40,7 +52,7 @@ class ChatRequest(BaseModel):
     """Chat request"""
 
     message: str = Field(..., min_length=1, description="User's message")
-    mode: str = Field("tax", description="Mode: 'tax' (Phase 1 only)")
+    mode: str = Field("auto", description="Mode: 'tax', 'dispute', 'document', 'auto'")
     conversation_id: Optional[str] = Field(None, description="Optional conversation ID")
     language: str = Field("ka", description="Language: 'ka' (Georgian) or 'en' (English)")
 
@@ -83,8 +95,11 @@ async def chat(request: ChatRequest):
     """
     Chat endpoint for legal AI assistant
 
-    Currently supports:
+    Supports multiple modes:
     - Tax mode: Georgian Tax Code queries
+    - Dispute mode: Ministry of Finance dispute decisions
+    - Document mode: Document generation (Phase 3)
+    - Auto mode: Automatic mode detection based on query content
 
     Args:
         request: Chat request with message and options
@@ -98,18 +113,19 @@ async def chat(request: ChatRequest):
     start_time = time.time()
 
     # Validate mode
-    if request.mode not in ["tax"]:
+    valid_modes = ["tax", "dispute", "document", "auto"]
+    if request.mode not in valid_modes:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid mode '{request.mode}'. Only 'tax' is supported in Phase 1."
+            detail=f"Invalid mode '{request.mode}'. Must be one of: {valid_modes}"
         )
 
-    # Get services
-    tax_service = get_tax_service()
-    if not tax_service:
+    # Get orchestrator
+    orchestrator = get_orchestrator()
+    if not orchestrator:
         raise HTTPException(
             status_code=503,
-            detail="Tax service not initialized"
+            detail="Orchestrator not initialized"
         )
 
     conversation_store = get_conversation_store()
@@ -127,22 +143,25 @@ async def chat(request: ChatRequest):
         # Create new conversation
         conversation_id = conversation_store.create_conversation()
 
-    # Get conversation history
-    messages = conversation_store.get_messages(conversation_id)
-
-    # Convert to format expected by tax service
-    history = [
-        {"role": msg["role"], "content": msg["content"]}
-        for msg in messages
-    ]
-
     try:
-        # Query tax service
-        logger.info(f"Processing tax query for conversation {conversation_id}")
+        # Route query through orchestrator
+        logger.info(f"Processing {request.mode} query for conversation {conversation_id}")
 
-        tax_response = await tax_service.query(
-            question=request.message,
-            conversation_history=history
+        # Convert mode string to QueryMode enum
+        try:
+            mode = QueryMode(request.mode)
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid mode: {request.mode}"
+            )
+
+        # Route query
+        unified_response = await orchestrator.route_query(
+            message=request.message,
+            mode=mode,
+            conversation_id=conversation_id,
+            filters=None  # TODO: Add filters support
         )
 
         # Save messages to conversation
@@ -154,45 +173,42 @@ async def chat(request: ChatRequest):
         conversation_store.add_message(
             conversation_id=conversation_id,
             role="assistant",
-            content=tax_response.answer
+            content=unified_response.answer
         )
 
-        # Convert cited articles to sources
+        # Convert unified response to chat response format
         tax_sources = [
             ChatSource(
                 article_number=article.article_number,
                 title=article.title,
                 snippet=article.snippet
             )
-            for article in tax_response.cited_articles
+            for article in unified_response.sources.tax_articles
         ]
 
-        # Check for warnings
-        warnings = []
-        invalid_citations = [
-            article for article in tax_response.cited_articles
-            if not article.article_number.isdigit() or int(article.article_number) > 309
+        case_sources = [
+            {
+                "doc_number": case.doc_number,
+                "date": case.date,
+                "category": case.category,
+                "decision_type": case.decision_type,
+                "snippet": case.snippet
+            }
+            for case in unified_response.sources.cases
         ]
-        if invalid_citations:
-            warnings.append(
-                f"Some citations may be invalid: {[a.article_number for a in invalid_citations]}"
-            )
-
-        # Calculate total processing time
-        processing_time_ms = int((time.time() - start_time) * 1000)
 
         return ChatResponse(
-            answer=tax_response.answer,
-            mode_used="tax",
+            answer=unified_response.answer,
+            mode_used=unified_response.mode_used.value,
             sources=ChatSources(
                 tax_articles=tax_sources,
-                cases=[],  # Empty for Phase 1
-                templates=[]  # Empty for Phase 1
+                cases=case_sources,
+                templates=[]  # Phase 3
             ),
-            citations_verified=len(tax_response.cited_articles) > 0,
-            warnings=warnings,
+            citations_verified=unified_response.citations_verified,
+            warnings=unified_response.warnings,
             conversation_id=conversation_id,
-            processing_time_ms=processing_time_ms
+            processing_time_ms=unified_response.processing_time_ms
         )
 
     except LLMError as e:

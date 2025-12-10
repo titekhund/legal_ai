@@ -19,7 +19,7 @@ from app.core import (
     set_request_id,
     setup_logging,
 )
-from app.services import TaxCodeService
+from app.services import DisputeService, Orchestrator, TaxCodeService
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -35,6 +35,8 @@ limiter = Limiter(
 
 # Global service instances
 tax_service: TaxCodeService = None
+dispute_service: DisputeService = None
+orchestrator: Orchestrator = None
 
 
 @asynccontextmanager
@@ -52,7 +54,7 @@ async def lifespan(app: FastAPI):
     )
 
     # Initialize tax service
-    global tax_service
+    global tax_service, dispute_service, orchestrator
     tax_service = TaxCodeService()
 
     try:
@@ -63,9 +65,28 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to initialize Tax Code Service: {e}")
         logger.warning("Tax Code Service will not be available")
 
-    # Set tax service in route handlers
+    # Initialize dispute service
+    dispute_service = DisputeService()
+
+    try:
+        logger.info("Initializing Dispute Service...")
+        await dispute_service.initialize()
+        logger.info("Dispute Service initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize Dispute Service: {e}")
+        logger.warning("Dispute Service will not be available")
+
+    # Initialize orchestrator
+    orchestrator = Orchestrator(
+        tax_service=tax_service,
+        dispute_service=dispute_service
+    )
+    logger.info("Orchestrator initialized")
+
+    # Set services in route handlers
     health.set_tax_service(tax_service)
     chat.set_tax_service(tax_service)
+    chat.set_orchestrator(orchestrator)
 
     logger.info(f"Legal AI application started in {settings.environment} mode")
 

@@ -1,9 +1,24 @@
 """
 Pydantic schemas for request/response validation
 """
+from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
+
+
+# ============================================================================
+# Query Mode Enum
+# ============================================================================
+
+
+class QueryMode(str, Enum):
+    """Query routing modes"""
+
+    TAX = "tax"
+    DISPUTE = "dispute"
+    DOCUMENT = "document"  # Phase 3
+    AUTO = "auto"
 
 
 # ============================================================================
@@ -253,6 +268,104 @@ class HealthCheckResponse(BaseModel):
     timestamp: str = Field(
         ...,
         description="ISO timestamp of health check"
+    )
+
+
+# ============================================================================
+# Dispute Schemas
+# ============================================================================
+
+
+class DisputeCase(BaseModel):
+    """Dispute case from Ministry of Finance decisions"""
+
+    doc_number: Optional[str] = Field(
+        None,
+        description="Document number (e.g., 'ТД-2024-123')"
+    )
+    date: Optional[str] = Field(
+        None,
+        description="Decision date"
+    )
+    category: Optional[str] = Field(
+        None,
+        description="Dispute category (e.g., 'დღგ', 'საშემოსავლო გადასახადი')"
+    )
+    decision_type: Optional[str] = Field(
+        None,
+        description="Decision type: 'satisfied', 'rejected', 'partially_satisfied'"
+    )
+    snippet: Optional[str] = Field(
+        None,
+        description="Relevant excerpt from the decision"
+    )
+
+
+class DocumentTemplate(BaseModel):
+    """Document template (Phase 3)"""
+
+    template_id: str = Field(
+        ...,
+        description="Template identifier"
+    )
+    name: str = Field(
+        ...,
+        description="Template name"
+    )
+    category: Optional[str] = Field(
+        None,
+        description="Template category"
+    )
+
+
+# ============================================================================
+# Unified Response Schemas (Multi-Mode Orchestrator)
+# ============================================================================
+
+
+class ResponseSources(BaseModel):
+    """Aggregated sources from all modes"""
+
+    tax_articles: List[CitedArticle] = Field(
+        default_factory=list,
+        description="Tax code articles cited"
+    )
+    cases: List[DisputeCase] = Field(
+        default_factory=list,
+        description="Dispute cases referenced"
+    )
+    templates: List[DocumentTemplate] = Field(
+        default_factory=list,
+        description="Document templates (Phase 3)"
+    )
+
+
+class UnifiedResponse(BaseModel):
+    """Unified response from orchestrator across all modes"""
+
+    answer: str = Field(
+        ...,
+        description="Generated answer"
+    )
+    mode_used: QueryMode = Field(
+        ...,
+        description="Mode used to answer the query"
+    )
+    sources: ResponseSources = Field(
+        default_factory=ResponseSources,
+        description="All sources used in the response"
+    )
+    citations_verified: bool = Field(
+        ...,
+        description="Whether citations were verified"
+    )
+    warnings: List[str] = Field(
+        default_factory=list,
+        description="Any warnings or notices"
+    )
+    processing_time_ms: int = Field(
+        ...,
+        description="Total processing time in milliseconds"
     )
 
 

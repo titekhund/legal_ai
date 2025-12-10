@@ -43,10 +43,10 @@ class Document(BaseModel):
         json_schema_extra = {
             "example": {
                 "id": "dispute_001",
-                "content": "сасаларзкн вагаьчедтикдба гцв-с гаеис шдсаюдб...",
+                "content": "Tax dispute case content in Georgian...",
                 "metadata": {
                     "case_id": "001",
-                    "court": "сахарзедкнс уждмадси сасаларзкн",
+                    "court": "Georgian Supreme Court",
                     "date": "2023-05-15",
                     "cited_articles": ["166", "165"]
                 }
@@ -68,7 +68,7 @@ class SearchResult(BaseModel):
             "example": {
                 "document": {
                     "id": "dispute_001",
-                    "content": "сасаларзкн вагаьчедтикдба...",
+                    "content": "яПНяПНяПНяПНяПНяПНяПНяПНяПНяПН яПНяПНяПНяПНяПНяПНяПНяПНяПНяПНяПНяПНяПНяПН...",
                     "metadata": {"case_id": "001"}
                 },
                 "score": 0.89,

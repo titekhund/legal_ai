@@ -4,6 +4,7 @@
 
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useChat } from '@/hooks/useChat';
 import { MessageBubble } from '@/components/chat/MessageBubble';
@@ -20,7 +21,7 @@ const EXAMPLE_QUESTIONS = [
   'რა არის საწარმოს მოგების გადასახადი?',
 ];
 
-export default function ChatPage() {
+function ChatContent() {
   const searchParams = useSearchParams();
   const conversationId = searchParams.get('id') || undefined;
 
@@ -125,5 +126,21 @@ export default function ChatPage() {
       {/* Input area */}
       <ChatInput onSend={sendMessage} disabled={isLoading} />
     </div>
+  );
+}
+
+function ChatLoading() {
+  return (
+    <div className="flex items-center justify-center h-full">
+      <Loading size="lg" />
+    </div>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<ChatLoading />}>
+      <ChatContent />
+    </Suspense>
   );
 }

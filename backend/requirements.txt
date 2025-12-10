@@ -14,6 +14,8 @@ httpx==0.26.0
 
 # Document Processing
 python-multipart==0.0.6
+pypdf==4.0.1
+tqdm==4.66.1
 
 # Logging
 structlog==24.1.0

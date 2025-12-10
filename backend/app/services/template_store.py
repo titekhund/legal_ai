@@ -6,7 +6,8 @@ Manages document templates with efficient retrieval and search.
 import re
 import yaml
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
+from functools import lru_cache
 
 from app.core.logging import get_logger
 from app.models.schemas import DocumentTemplate, DocumentType, TemplateVariable
@@ -33,6 +34,11 @@ class TemplateStore:
         self.templates: Dict[str, DocumentTemplate] = {}
         self.types: Dict[str, DocumentType] = {}
         self._initialized = False
+
+        # Performance optimization: Cache for search results
+        self._search_cache: Dict[Tuple, List[DocumentTemplate]] = {}
+        self._type_cache: Dict[Tuple, List[DocumentTemplate]] = {}
+        self._cache_max_size = 100  # Maximum cache entries
 
         logger.info(f"Template store initialized with directory: {templates_dir}")
 
@@ -246,7 +252,7 @@ class TemplateStore:
         language: Optional[str] = None
     ) -> List[DocumentTemplate]:
         """
-        Get all templates for a document type
+        Get all templates for a document type (with caching)
 
         Args:
             document_type: Document type ID
@@ -255,6 +261,13 @@ class TemplateStore:
         Returns:
             List of matching templates
         """
+        # Check cache first
+        cache_key = (document_type, language)
+        if cache_key in self._type_cache:
+            logger.debug(f"Cache hit for type query: {cache_key}")
+            return self._type_cache[cache_key]
+
+        # Compute results
         results = [
             template for template in self.templates.values()
             if template.type == document_type
@@ -262,6 +275,10 @@ class TemplateStore:
 
         if language:
             results = [t for t in results if t.language == language]
+
+        # Cache results
+        self._type_cache[cache_key] = results
+        self._trim_cache(self._type_cache)
 
         return results
 
@@ -272,7 +289,7 @@ class TemplateStore:
         language: Optional[str] = None
     ) -> List[DocumentTemplate]:
         """
-        Search templates by query
+        Search templates by query (with caching)
 
         Args:
             query: Search query
@@ -282,6 +299,13 @@ class TemplateStore:
         Returns:
             List of matching templates
         """
+        # Check cache first
+        cache_key = (query.lower(), document_type, language)
+        if cache_key in self._search_cache:
+            logger.debug(f"Cache hit for search query: {query}")
+            return self._search_cache[cache_key]
+
+        # Compute results
         query_lower = query.lower()
         results = []
 
@@ -298,6 +322,10 @@ class TemplateStore:
                 any(query_lower in tag.lower() for tag in template.tags) or
                 (template.category and query_lower in template.category.lower())):
                 results.append(template)
+
+        # Cache results
+        self._search_cache[cache_key] = results
+        self._trim_cache(self._search_cache)
 
         return results
 
@@ -342,6 +370,9 @@ class TemplateStore:
 
         # Add to store
         self.templates[template.id] = template
+
+        # Clear cache since we added a new template
+        self.clear_cache()
 
         # Save to file
         template_file = self.templates_dir / f"{template.id}.yaml"
@@ -413,6 +444,27 @@ class TemplateStore:
             logger.error(f"Template validation error: {e}", exc_info=True)
             return False
 
+    def _trim_cache(self, cache: Dict) -> None:
+        """
+        Trim cache to maximum size using LRU eviction
+
+        Args:
+            cache: Cache dictionary to trim
+        """
+        if len(cache) > self._cache_max_size:
+            # Remove oldest 20% of entries
+            remove_count = self._cache_max_size // 5
+            keys_to_remove = list(cache.keys())[:remove_count]
+            for key in keys_to_remove:
+                cache.pop(key, None)
+            logger.debug(f"Trimmed cache: removed {remove_count} entries")
+
+    def clear_cache(self) -> None:
+        """Clear all caches"""
+        self._search_cache.clear()
+        self._type_cache.clear()
+        logger.info("Template caches cleared")
+
     def get_status(self) -> dict:
         """
         Get template store status
@@ -428,5 +480,10 @@ class TemplateStore:
             "templates_by_language": {
                 "ka": len([t for t in self.templates.values() if t.language == "ka"]),
                 "en": len([t for t in self.templates.values() if t.language == "en"])
+            },
+            "cache_stats": {
+                "search_cache_size": len(self._search_cache),
+                "type_cache_size": len(self._type_cache),
+                "cache_max_size": self._cache_max_size
             }
         }

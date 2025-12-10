@@ -5,6 +5,7 @@ import re
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from functools import lru_cache
 
 import google.generativeai as genai
 
@@ -21,6 +22,56 @@ from app.services.llm_client import GeminiClient
 from .prompts import TAX_SYSTEM_PROMPT
 
 logger = get_logger(__name__)
+
+
+# Global LRU cache for citation extraction (static function)
+@lru_cache(maxsize=256)
+def _extract_citations_cached(text: str) -> tuple:
+    """
+    Cached citation extraction (returns tuple for hashability)
+
+    Args:
+        text: Text to extract citations from
+
+    Returns:
+        Tuple of (article_number, title, snippet) tuples
+    """
+    citations = []
+    seen_articles = set()
+
+    # Pattern 1: "მუხლი X" or "მუხლი X.Y.Z"
+    pattern1 = r'მუხლი\s+(\d+(?:\.\d+)?(?:\.[ა-ჰ])?)'
+    for match in re.finditer(pattern1, text):
+        article_num = match.group(1)
+        if article_num not in seen_articles:
+            citations.append((article_num, None, None))
+            seen_articles.add(article_num)
+
+    # Pattern 2: "X-ე მუხლი" or "X-ე მუხლის"
+    pattern2 = r'(\d+)-ე\s+მუხლ[ი|ის]'
+    for match in re.finditer(pattern2, text):
+        article_num = match.group(1)
+        if article_num not in seen_articles:
+            citations.append((article_num, None, None))
+            seen_articles.add(article_num)
+
+    # Pattern 3: Complex citations like "მუხლი 168, ნაწილი 1, პუნქტი ა"
+    pattern3 = r'მუხლი\s+(\d+),\s*ნაწილი\s+(\d+)(?:,\s*პუნქტი\s+([ა-ჰ]))?'
+    for match in re.finditer(pattern3, text):
+        article_num = match.group(1)
+        part_num = match.group(2)
+        point = match.group(3)
+
+        if point:
+            full_ref = f"{article_num}.{part_num}.{point}"
+        else:
+            full_ref = f"{article_num}.{part_num}"
+
+        if full_ref not in seen_articles:
+            citations.append((full_ref, None, None))
+            seen_articles.add(full_ref)
+
+    return tuple(citations)
 
 
 class TaxCodeService:
@@ -93,7 +144,7 @@ class TaxCodeService:
 
     def _extract_citations(self, text: str) -> List[CitedArticle]:
         """
-        Extract Georgian legal citations from text
+        Extract Georgian legal citations from text (with caching)
 
         Patterns supported:
         - "მუხლი 168"
@@ -108,52 +159,18 @@ class TaxCodeService:
         Returns:
             List of CitedArticle objects
         """
-        citations = []
-        seen_articles = set()
+        # Use cached extraction function
+        cached_citations = _extract_citations_cached(text)
 
-        # Pattern 1: "მუხლი X" or "მუხლი X.Y.Z"
-        pattern1 = r'მუხლი\s+(\d+(?:\.\d+)?(?:\.[ა-ჰ])?)'
-        for match in re.finditer(pattern1, text):
-            article_num = match.group(1)
-            if article_num not in seen_articles:
-                citations.append(CitedArticle(
-                    article_number=article_num,
-                    title=None,
-                    snippet=None
-                ))
-                seen_articles.add(article_num)
-
-        # Pattern 2: "X-ე მუხლი" or "X-ე მუხლის"
-        pattern2 = r'(\d+)-ე\s+მუხლ[ი|ის]'
-        for match in re.finditer(pattern2, text):
-            article_num = match.group(1)
-            if article_num not in seen_articles:
-                citations.append(CitedArticle(
-                    article_number=article_num,
-                    title=None,
-                    snippet=None
-                ))
-                seen_articles.add(article_num)
-
-        # Pattern 3: Complex citations like "მუხლი 168, ნაწილი 1, პუნქტი ა"
-        pattern3 = r'მუხლი\s+(\d+),\s*ნაწილი\s+(\d+)(?:,\s*პუნქტი\s+([ა-ჰ]))?'
-        for match in re.finditer(pattern3, text):
-            article_num = match.group(1)
-            part_num = match.group(2)
-            point = match.group(3)
-
-            if point:
-                full_ref = f"{article_num}.{part_num}.{point}"
-            else:
-                full_ref = f"{article_num}.{part_num}"
-
-            if full_ref not in seen_articles:
-                citations.append(CitedArticle(
-                    article_number=full_ref,
-                    title=None,
-                    snippet=None
-                ))
-                seen_articles.add(full_ref)
+        # Convert tuples back to CitedArticle objects
+        citations = [
+            CitedArticle(
+                article_number=article_num,
+                title=title,
+                snippet=snippet
+            )
+            for article_num, title, snippet in cached_citations
+        ]
 
         logger.info(f"Extracted {len(citations)} citations from response")
         return citations
@@ -297,6 +314,9 @@ class TaxCodeService:
         Returns:
             Dictionary with status information
         """
+        # Get cache info for citation extraction
+        cache_info = _extract_citations_cached.cache_info()
+
         return {
             "service": "TaxCodeService",
             "file_upload_status": self.file_upload_status,
@@ -305,6 +325,12 @@ class TaxCodeService:
             "uploaded_file_name": self.uploaded_file.name if self.uploaded_file else None,
             "model_name": self.llm_client.get_model_name(),
             "max_history_messages": self.MAX_HISTORY_MESSAGES,
+            "cache_stats": {
+                "citation_cache_hits": cache_info.hits,
+                "citation_cache_misses": cache_info.misses,
+                "citation_cache_size": cache_info.currsize,
+                "citation_cache_maxsize": cache_info.maxsize
+            }
         }
 
     async def health_check(self) -> bool:

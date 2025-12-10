@@ -1,16 +1,43 @@
-# Legal AI - Tax Code Assistant
-
-<!-- TODO: Expand README with comprehensive documentation -->
+# Legal AI - Georgian Tax Code Assistant
 
 ## Overview
-AI-powered legal assistant for tax code research, dispute resolution, and document generation.
+AI-powered legal assistant for Georgian tax code research, dispute resolution, and document generation. Built with Gemini AI and modern web technologies.
 
 ## Features
-- **Tax Code Search**: Semantic search over Internal Revenue Code and related regulations
-- **Dispute Resolution Support**: Analysis of historical tax disputes and outcomes
-- **Document Generation**: Templates for legal documents and filings
-- **RAG Pipeline**: Advanced retrieval-augmented generation for accurate, cited responses
-- **Citation Extraction**: Automatic extraction and validation of legal citations
+
+### Tax Code Consultation (Phase 1-2)
+- **NotebookLM-Style Reasoning**: Query Georgian Tax Code with conversational AI
+- **Automatic Citation Extraction**: Identifies and references specific tax code articles
+- **Contextual Understanding**: Maintains conversation history for follow-up questions
+- **Confidence Scoring**: Provides reliability indicators based on citation count
+- **Georgian Language Support**: Native Georgian language interface and responses
+
+### Dispute Resolution (Phase 2)
+- **RAG-Based Analysis**: Retrieval-augmented generation over historical dispute cases
+- **Similar Case Discovery**: Find precedents using semantic search
+- **Legal Ground Identification**: Extract legal basis from submitted disputes
+- **Recommendation Engine**: AI-generated recommendations based on case analysis
+- **Multi-Document Support**: Upload PDFs and JSON dispute documents
+
+### Document Generation (Phase 3)
+- **YAML Template System**: 6 Georgian legal document templates
+  - Non-Disclosure Agreements (NDA)
+  - Employment Contracts
+  - Board Resolutions
+  - Service Agreements
+  - Loan Agreements
+  - Shareholder Agreements
+- **Dynamic Forms**: Auto-generated forms based on template variables
+- **Multi-Format Export**: Download as Markdown, DOCX, or PDF
+- **Legal References**: Automatic inclusion of relevant tax code articles
+- **Document Preview**: Live markdown rendering with syntax highlighting
+- **TTL-Based Storage**: Temporary document storage with 1-hour expiration
+
+### Performance Optimizations
+- **Template Caching**: LRU cache for frequently accessed templates (100 entry limit)
+- **Citation Caching**: Cached regex extraction for tax article citations (256 entry limit)
+- **Gemini File API Caching**: Automatic caching of uploaded tax code documents
+- **Type-Based Lookups**: Cached document type filtering
 
 ## Project Structure
 ```
@@ -179,47 +206,149 @@ npm start
 - API Docs: http://localhost:8000/docs
 
 ### Running Tests
+
+#### Backend Unit Tests
 ```bash
-# Backend tests
 cd backend
 pytest
 
-# Frontend tests
+# Run with coverage
+pytest --cov=app --cov-report=html
+
+# Run specific test file
+pytest tests/test_document_service.py
+
+# Run with verbose output
+pytest -v
+```
+
+#### End-to-End Tests
+```bash
+# Start the backend server first
+cd backend
+uvicorn app.main:app --reload
+
+# In another terminal, run E2E tests
+python scripts/e2e_test.py
+```
+
+#### Golden Tests
+The project includes comprehensive golden tests in `docs/golden_tests.yaml`:
+- Tax query tests (10+ scenarios)
+- Dispute analysis tests (8+ cases)
+- Document generation tests (6 document types)
+
+#### Frontend Tests
+```bash
 cd frontend
 npm test
+
+# Run with coverage
+npm test -- --coverage
 ```
 
-## Data Ingestion
+## Data Management
+
+### Tax Code
+The Georgian Tax Code PDF is automatically uploaded to Gemini File API on service initialization. The file is cached for efficient querying.
+
+Place your tax code PDF at: `backend/data/tax_code/georgian_tax_code.pdf`
+
+### Dispute Documents
+Upload dispute documents via the Admin API:
+
 ```bash
-# TODO: Add data ingestion instructions
-# Ingest tax code documents
-python scripts/ingest_tax_code.py --source data/tax_code/
+# Upload PDF dispute case
+curl -X POST "http://localhost:8000/api/v1/admin/disputes" \
+  -H "X-Admin-Key: your-admin-key" \
+  -F "file=@dispute_case.pdf" \
+  -F "metadata={\"case_id\":\"2024-001\"}"
 
-# Ingest dispute documents
-python scripts/ingest_disputes.py --source data/disputes/
-
-# Ingest templates
-python scripts/ingest_templates.py --source data/templates/
+# Upload JSON dispute case
+curl -X POST "http://localhost:8000/api/v1/admin/disputes" \
+  -H "X-Admin-Key: your-admin-key" \
+  -F "file=@dispute_case.json"
 ```
+
+### Document Templates
+Templates are stored as YAML files in `backend/data/templates/`. Each template includes:
+- Document metadata (type, language, category)
+- Template content with variable placeholders
+- Variable definitions with types and validation
+- Related tax code articles
+
+Upload templates via Admin API:
+```bash
+curl -X POST "http://localhost:8000/api/v1/admin/templates" \
+  -H "X-Admin-Key: your-admin-key" \
+  -F "file=@my_template.yaml"
+```
+
+See existing templates in `backend/data/templates/` for examples.
 
 ## Technology Stack
 
 ### Frontend
-- Next.js 14
-- React 18
-- TypeScript
-- Tailwind CSS
+- **Next.js 14**: React framework with App Router
+- **React 18**: UI component library
+- **TypeScript**: Type-safe JavaScript
+- **Tailwind CSS**: Utility-first CSS framework
+- **react-markdown**: Markdown rendering for document preview
+- **Radix UI**: Accessible component primitives
 
 ### Backend
-- FastAPI
-- Python 3.11
-- LangChain
-- Anthropic Claude API
+- **FastAPI**: Modern Python web framework
+- **Python 3.11**: Programming language
+- **Gemini AI**: Google's multimodal AI for tax code reasoning
+- **Anthropic Claude**: Advanced LLM for dispute analysis and document generation
+- **python-docx**: DOCX document generation
+- **PyYAML**: YAML template parsing
+- **Pydantic**: Data validation and settings management
+
+### AI & ML
+- **Gemini File API**: Document upload and caching
+- **RAG Pipeline**: Retrieval-augmented generation for disputes
+- **Vector Embeddings**: Semantic search over dispute cases
+- **LRU Caching**: Performance optimization for frequent queries
 
 ### Data & Storage
-- PostgreSQL (relational data)
-- Pinecone/Weaviate (vector database)
-- Redis (caching)
+- **In-Memory Storage**: OrderedDict with TTL for generated documents
+- **File System**: YAML templates and uploaded documents
+- **Gemini File Cache**: Automatic caching of tax code PDF
+
+## API Endpoints
+
+### Tax Code Endpoints
+- `POST /api/v1/tax/advice` - Get tax advice with citations
+- `GET /api/v1/tax/articles` - Search tax code articles
+- `GET /api/v1/tax/status` - Get tax service status
+
+### Dispute Resolution Endpoints
+- `POST /api/v1/disputes/analyze` - Analyze dispute case
+- `GET /api/v1/disputes/cases` - Search similar cases
+- `GET /api/v1/disputes/status` - Get dispute service status
+
+### Document Generation Endpoints
+- `GET /api/v1/documents/types` - List document types
+- `GET /api/v1/documents/types/{type_id}` - Get specific document type
+- `GET /api/v1/documents/templates` - List templates with filters
+- `POST /api/v1/documents/generate` - Generate document
+- `GET /api/v1/documents/download/{document_id}` - Download document (MD/DOCX/PDF)
+
+### Admin Endpoints (Requires X-Admin-Key header)
+- `POST /api/v1/admin/templates` - Upload YAML template
+- `POST /api/v1/admin/disputes` - Upload dispute document
+- `GET /api/v1/admin/stats` - Get system statistics
+- `GET /api/v1/admin/health` - Admin health check
+
+### System Endpoints
+- `GET /health` - System health check
+- `GET /docs` - Interactive API documentation (Swagger UI)
+- `GET /redoc` - Alternative API documentation (ReDoc)
+
+For detailed API specifications, see:
+- Interactive Docs: http://localhost:8000/docs
+- API Contract: [docs/api_contract.md](docs/api_contract.md)
 
 ## Contributing
 <!-- TODO: Add contribution guidelines -->

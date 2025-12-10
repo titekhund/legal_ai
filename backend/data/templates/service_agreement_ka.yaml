@@ -1,0 +1,109 @@
+id: service_agreement_ka
+type: service_agreement
+name_ka: მომსახურების ხელშეკრულება
+name_en: Service Agreement
+language: ka
+category: ხელშეკრულებები
+tags:
+  - მომსახურება
+  - ხელშეკრულება
+  - სერვისი
+
+variables:
+  - name: provider_name
+    label_ka: მომსახურების მიმწოდებლის სახელი
+    label_en: Service Provider Name
+    type: text
+    required: true
+
+  - name: client_name
+    label_ka: კლიენტის სახელი
+    label_en: Client Name
+    type: text
+    required: true
+
+  - name: service_description
+    label_ka: მომსახურების აღწერა
+    label_en: Service Description
+    type: text
+    required: true
+    placeholder_ka: მაგ., IT კონსულტაცია და ტექნიკური მხარდაჭერა
+
+  - name: service_fee
+    label_ka: მომსახურების საფასური (ლარი)
+    label_en: Service Fee (GEL)
+    type: number
+    required: true
+
+  - name: agreement_date
+    label_ka: ხელშეკრულების თარიღი
+    label_en: Agreement Date
+    type: date
+    required: true
+
+  - name: duration_months
+    label_ka: ვადა (თვეები)
+    label_en: Duration (months)
+    type: number
+    required: false
+    default: "12"
+
+related_articles:
+  - "98"  # მომსახურების დღგ
+
+content: |
+  # მომსახურების ხელშეკრულება
+
+  **თარიღი:** {{agreement_date}}
+
+  ## მხარეები
+
+  **მომსახურების მიმწოდებელი:** {{provider_name}}
+
+  **კლიენტი:** {{client_name}}
+
+  ## 1. ხელშეკრულების საგანი
+
+  მომსახურების მიმწოდებელი ვალდებულია გაუწიოს კლიენტს შემდეგი მომსახურება:
+
+  **{{service_description}}**
+
+  ## 2. მომსახურების საფასური
+
+  მომსახურების საფასური შეადგენს: **{{service_fee}} ლარს** (დღგ-ს ჩათვლით, მუხლი 166).
+
+  საფასური გადაიხდება საბანკო გადარიცხვის გზით ინვოისის გამოწერიდან 10 დღის ვადაში.
+
+  ## 3. მხარეთა უფლება-მოვალეობები
+
+  ### 3.1 მიმწოდებლის ვალდებულებები
+
+  - მომსახურების ხარისხიანი შესრულება
+  - დროული და პროფესიონალური მომსახურება
+  - კონფიდენციალურობის დაცვა
+
+  ### 3.2 კლიენტის ვალდებულებები
+
+  - მომსახურების საფასურის დროული გადახდა
+  - საჭირო ინფორმაციის მიწოდება
+  - თანამშრომლობა მიმწოდებელთან
+
+  ## 4. ხელშეკრულების ვადა
+
+  ხელშეკრულება ძალაშია {{duration_months}} თვის განმავლობაში {{agreement_date}} თარიღიდან.
+
+  ## 5. პასუხისმგებლობა
+
+  მხარეები პასუხისმგებელნი არიან ხელშეკრულების დარღვევისთვის საქართველოს კანონმდებლობის შესაბამისად.
+
+  ---
+
+  ## ხელმოწერები
+
+  **მიმწოდებელი:**
+  {{provider_name}}
+  ხელმოწერა: _________________
+
+  **კლიენტი:**
+  {{client_name}}
+  ხელმოწერა: _________________

@@ -1,0 +1,118 @@
+id: loan_agreement_ka
+type: loan_agreement
+name_ka: სესხის ხელშეკრულება
+name_en: Loan Agreement
+language: ka
+category: ფინანსური დოკუმენტები
+tags:
+  - სესხი
+  - დაკრედიტება
+  - ფინანსები
+  - ხელშეკრულება
+
+variables:
+  - name: lender_name
+    label_ka: მსესხებლის სახელი
+    label_en: Lender Name
+    type: text
+    required: true
+
+  - name: borrower_name
+    label_ka: მსახიობის სახელი
+    label_en: Borrower Name
+    type: text
+    required: true
+
+  - name: loan_amount
+    label_ka: სესხის თანხა (ლარი)
+    label_en: Loan Amount (GEL)
+    type: number
+    required: true
+
+  - name: interest_rate
+    label_ka: საპროცენტო განაკვეთი (%)
+    label_en: Interest Rate (%)
+    type: number
+    required: true
+    placeholder_ka: მაგ., 10
+
+  - name: loan_date
+    label_ka: სესხის გაცემის თარიღი
+    label_en: Loan Date
+    type: date
+    required: true
+
+  - name: repayment_date
+    label_ka: დაბრუნების ბოლო ვადა
+    label_en: Repayment Date
+    type: date
+    required: true
+
+  - name: repayment_terms
+    label_ka: დაბრუნების პირობები
+    label_en: Repayment Terms
+    type: text
+    required: false
+    default: ერთჯერადად, ბოლო ვადისთვის
+    placeholder_ka: მაგ., ყოველთვიური გადახდები
+
+related_articles: []
+
+content: |
+  # სესხის ხელშეკრულება
+
+  **თარიღი:** {{loan_date}}
+
+  ## მხარეები
+
+  **მსესხებელი:** {{lender_name}}
+
+  **მსახიობი:** {{borrower_name}}
+
+  ## 1. ხელშეკრულების საგანი
+
+  მსესხებელი გადასცემს მსახიობს ფულად სახსრებს სესხად, ხოლო მსახიობი ვალდებულია დააბრუნოს მიღებული სესხი და გადაუხადოს პროცენტი ამ ხელშეკრულებით დადგენილ ვადაში და პირობებით.
+
+  ## 2. სესხის პირობები
+
+  **სესხის თანხა:** {{loan_amount}} ლარი
+
+  **საპროცენტო განაკვეთი:** {{interest_rate}}% წელიწადში
+
+  **გაცემის თარიღი:** {{loan_date}}
+
+  **დაბრუნების თარიღი:** {{repayment_date}}
+
+  **დაბრუნების პირობები:** {{repayment_terms}}
+
+  ## 3. დაბრუნება
+
+  მსახიობი ვალდებულია დააბრუნოს სესხი და გადაუხადოს პროცენტი არა უგვიანეს {{repayment_date}} თარიღისა.
+
+  ## 4. პროცენტის გაანგარიშება
+
+  პროცენტი გამოითვლება ფაქტობრივი სარგებლობის ვადის მიხედვით {{interest_rate}}% წლიური განაკვეთით.
+
+  ## 5. ვადაგადაცილების შედეგები
+
+  ვადაგადაცილების შემთხვევაში მსახიობი ვალდებულია გადაუხადოს საურავი 0.1% ყოველი ვადაგადაცილებული დღისთვის.
+
+  ## 6. ვადამდე დაფარვა
+
+  მსახიობს უფლება აქვს ვადამდე დააფაროს სესხი სრულად ან ნაწილობრივ, ფაქტობრივი სარგებლობის ვადის პროცენტის გადახდით.
+
+  ## 7. უზრუნველყოფა
+
+  სესხის უზრუნველყოფა ხდება მხარეთა შეთანხმებით.
+
+  ---
+
+  ## ხელმოწერები
+
+  **მსესხებელი:**
+  {{lender_name}}
+  ხელმოწერა: _________________
+
+  **მსახიობი:**
+  {{borrower_name}}
+  ხელმოწერა: _________________

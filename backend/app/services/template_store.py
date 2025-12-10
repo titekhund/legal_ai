@@ -3,7 +3,8 @@ Template Store for Document Generation
 
 Manages document templates with efficient retrieval and search.
 """
-import json
+import re
+import yaml
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -17,7 +18,7 @@ class TemplateStore:
     """
     Store and manage document templates
 
-    Templates are loaded from JSON files and indexed for efficient
+    Templates are loaded from YAML files and indexed for efficient
     retrieval by type, language, and search queries.
     """
 
@@ -26,7 +27,7 @@ class TemplateStore:
         Initialize template store
 
         Args:
-            templates_dir: Directory containing template JSON files
+            templates_dir: Directory containing template YAML files
         """
         self.templates_dir = Path(templates_dir)
         self.templates: Dict[str, DocumentTemplate] = {}
@@ -37,7 +38,7 @@ class TemplateStore:
 
     async def load_templates(self) -> bool:
         """
-        Load templates from directory
+        Load templates from YAML files in directory
 
         Returns:
             True if templates loaded successfully
@@ -46,11 +47,11 @@ class TemplateStore:
             # Ensure templates directory exists
             self.templates_dir.mkdir(parents=True, exist_ok=True)
 
-            # Load document types
-            types_file = self.templates_dir / "document_types.json"
+            # Load document types from document_types.yaml
+            types_file = self.templates_dir / "document_types.yaml"
             if types_file.exists():
                 with open(types_file, "r", encoding="utf-8") as f:
-                    types_data = json.load(f)
+                    types_data = yaml.safe_load(f)
                     for type_data in types_data:
                         doc_type = DocumentType(**type_data)
                         self.types[doc_type.id] = doc_type
@@ -60,17 +61,28 @@ class TemplateStore:
                 # Load default types
                 self._load_default_types()
 
-            # Load templates
-            templates_file = self.templates_dir / "templates.json"
-            if templates_file.exists():
-                with open(templates_file, "r", encoding="utf-8") as f:
-                    templates_data = json.load(f)
-                    for template_data in templates_data:
-                        template = DocumentTemplate(**template_data)
-                        self.templates[template.id] = template
-                logger.info(f"Loaded {len(self.templates)} templates")
+            # Load all YAML template files
+            template_files = list(self.templates_dir.glob("*.yaml"))
+            # Exclude document_types.yaml
+            template_files = [f for f in template_files if f.name != "document_types.yaml"]
+
+            if template_files:
+                for template_file in template_files:
+                    try:
+                        with open(template_file, "r", encoding="utf-8") as f:
+                            template_data = yaml.safe_load(f)
+                            # Validate and load template
+                            if self._validate_template(template_data):
+                                template = DocumentTemplate(**template_data)
+                                self.templates[template.id] = template
+                                logger.debug(f"Loaded template: {template.id}")
+                            else:
+                                logger.warning(f"Template validation failed: {template_file.name}")
+                    except Exception as e:
+                        logger.error(f"Error loading template {template_file.name}: {e}")
+                logger.info(f"Loaded {len(self.templates)} templates from YAML files")
             else:
-                logger.warning(f"Templates file not found: {templates_file}")
+                logger.warning("No template YAML files found")
                 # Load default templates
                 self._load_default_templates()
 
@@ -309,6 +321,97 @@ class TemplateStore:
             List of document types
         """
         return list(self.types.values())
+
+    async def add_template(self, template: DocumentTemplate) -> str:
+        """
+        Add new template to store
+
+        Args:
+            template: Template to add
+
+        Returns:
+            Template ID
+
+        Raises:
+            ValueError: If template validation fails
+        """
+        # Validate template
+        template_dict = template.model_dump()
+        if not self._validate_template(template_dict):
+            raise ValueError(f"Template validation failed for: {template.id}")
+
+        # Add to store
+        self.templates[template.id] = template
+
+        # Save to file
+        template_file = self.templates_dir / f"{template.id}.yaml"
+        try:
+            with open(template_file, "w", encoding="utf-8") as f:
+                yaml.dump(template_dict, f, allow_unicode=True, default_flow_style=False)
+            logger.info(f"Saved template: {template.id}")
+        except Exception as e:
+            logger.error(f"Error saving template {template.id}: {e}")
+            # Remove from store if save failed
+            del self.templates[template.id]
+            raise
+
+        return template.id
+
+    def _validate_template(self, template_data: dict) -> bool:
+        """
+        Validate template data
+
+        Args:
+            template_data: Template dictionary
+
+        Returns:
+            True if valid, False otherwise
+        """
+        try:
+            # Check required fields
+            required_fields = ["id", "type", "name_ka", "name_en", "language", "content", "variables"]
+            for field in required_fields:
+                if field not in template_data:
+                    logger.error(f"Template missing required field: {field}")
+                    return False
+
+            # Validate language
+            if template_data["language"] not in ["ka", "en"]:
+                logger.error(f"Invalid language: {template_data['language']}")
+                return False
+
+            # Validate all variables are present in content
+            content = template_data["content"]
+            variables = template_data.get("variables", [])
+
+            for var in variables:
+                var_name = var["name"] if isinstance(var, dict) else var.name
+                var_placeholder = f"{{{{{var_name}}}}}"
+                if var_placeholder not in content:
+                    logger.warning(
+                        f"Variable {var_name} not found in template content: {template_data['id']}"
+                    )
+                    # This is a warning, not a failure
+
+            # Check for variables in content that aren't defined
+            defined_vars = {
+                (var["name"] if isinstance(var, dict) else var.name)
+                for var in variables
+            }
+            # Find all {{variable}} patterns in content
+            found_vars = set(re.findall(r'\{\{(\w+)\}\}', content))
+
+            undefined_vars = found_vars - defined_vars
+            if undefined_vars:
+                logger.warning(
+                    f"Template {template_data['id']} has undefined variables in content: {undefined_vars}"
+                )
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Template validation error: {e}", exc_info=True)
+            return False
 
     def get_status(self) -> dict:
         """

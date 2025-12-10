@@ -1,0 +1,88 @@
+id: board_resolution_ka
+type: board_resolution
+name_ka: დირექტორთა საბჭოს დადგენილება
+name_en: Board of Directors Resolution
+language: ka
+category: კორპორატიული დოკუმენტები
+tags:
+  - დირექტორთა საბჭო
+  - დადგენილება
+  - კორპორატიული
+  - გადაწყვეტილება
+
+variables:
+  - name: company_name
+    label_ka: კომპანიის სახელი
+    label_en: Company Name
+    type: text
+    required: true
+    placeholder_ka: მაგ., შპს "კომპანია"
+
+  - name: resolution_date
+    label_ka: დადგენილების თარიღი
+    label_en: Resolution Date
+    type: date
+    required: true
+
+  - name: resolution_number
+    label_ka: დადგენილების ნომერი
+    label_en: Resolution Number
+    type: text
+    required: true
+    placeholder_ka: მაგ., №01/2024
+
+  - name: resolution_subject
+    label_ka: დადგენილების საგანი
+    label_en: Resolution Subject
+    type: text
+    required: true
+    placeholder_ka: მაგ., ახალი დირექტორის დანიშვნა
+
+  - name: resolution_text
+    label_ka: დადგენილების ტექსტი
+    label_en: Resolution Text
+    type: text
+    required: true
+    placeholder_ka: შეიყვანეთ დადგენილების სრული ტექსტი
+
+  - name: attendees
+    label_ka: დამსწრეები
+    label_en: Attendees
+    type: text
+    required: false
+    placeholder_ka: მაგ., გიორგი გიორგაძე, ნინო ნინოშვილი
+
+related_articles: []
+
+content: |
+  # დირექტორთა საბჭოს დადგენილება
+
+  **კომპანია:** {{company_name}}
+  **დადგენილების №:** {{resolution_number}}
+  **თარიღი:** {{resolution_date}}
+
+  ## საგანი
+
+  **{{resolution_subject}}**
+
+  ## დამსწრეები
+
+  {{attendees}}
+
+  ## დადგენილება
+
+  {{resolution_text}}
+
+  ## ხმის მიცემა
+
+  დადგენილება მიღებულია ერთხმად.
+
+  ---
+
+  ## ხელმოწერები
+
+  თავმჯდომარე: _________________
+
+  სამდივნო: _________________
+
+  თარიღი: {{resolution_date}}

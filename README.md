@@ -350,6 +350,41 @@ For detailed API specifications, see:
 - Interactive Docs: http://localhost:8000/docs
 - API Contract: [docs/api_contract.md](docs/api_contract.md)
 
+## Deployment
+
+The application is configured for easy deployment to production platforms.
+
+### Frontend Deployment (Vercel)
+
+The frontend is configured for automatic deployment to Vercel via GitHub Actions.
+
+**Quick Setup:**
+1. Create a Vercel account and connect your GitHub repository
+2. Add required GitHub secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
+3. Configure environment variables in Vercel:
+   - `NEXT_PUBLIC_API_BASE_URL` - Your backend URL
+   - `NEXT_PUBLIC_APP_NAME` - Application name (optional)
+4. Push to `main` branch - automatic deployment triggers
+
+**Manual Deployment:**
+```bash
+cd frontend
+npm install -g vercel
+vercel --prod
+```
+
+See [Deployment Guide](docs/deployment.md) for complete instructions.
+
+### Backend Deployment (Railway)
+
+Backend deployment to Railway will be configured in a future update.
+
+### Configuration Files
+
+- `frontend/vercel.json` - Vercel deployment configuration
+- `frontend/next.config.js` - Next.js production settings
+- `.github/workflows/deploy-frontend.yml` - CI/CD workflow
+
 ## Contributing
 <!-- TODO: Add contribution guidelines -->
 

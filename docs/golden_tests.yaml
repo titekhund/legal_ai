@@ -54,3 +54,78 @@ edge_cases:
     question: "Hello"
     should_respond: true
     should_not_error: true
+
+dispute_tests:
+  - id: dispute_001
+    question: "როგორ განიმარტა დღგ-ის ჩათვლის უფლება სასამართლო პრაქტიკაში?"
+    mode: dispute
+    should_cite_cases: true
+    expected_mentions_articles: ["178", "179"]
+    language: ka
+
+  - id: dispute_002
+    question: "რა პრეცედენტები არსებობს ურთიერთდამოკიდებულ პირებთან დაკავშირებით?"
+    mode: dispute
+    should_cite_cases: true
+    expected_mentions_articles: ["19"]
+    language: ka
+
+  - id: dispute_003
+    question: "დავების პრაქტიკა საწარმოო საქმიანობის განმარტებასთან დაკავშირებით"
+    mode: dispute
+    should_cite_cases: true
+    expected_contains: ["საწარმოო", "საქმიანობა"]
+    language: ka
+
+  - id: dispute_004
+    question: "როგორ წყდება დავები გადასახადის დარიცხვის ვადასთან დაკავშირებით?"
+    mode: dispute
+    should_cite_cases: true
+    expected_contains: ["დარიცხვა", "ვადა"]
+    language: ka
+
+  - id: dispute_005
+    question: "რა გადაწყვეტილებები არსებობს საგადასახადო შეღავათების შესახებ?"
+    mode: dispute
+    should_cite_cases: true
+    expected_contains: ["შეღავათ"]
+    language: ka
+
+cross_container_tests:
+  - id: cross_001
+    question: "რა არის დღგ-ის განაკვეთი და როგორ განიმარტა ეს სასამართლოში?"
+    mode: auto
+    should_use_both: ["tax", "dispute"]
+    expected_mentions_articles: ["166"]
+    should_cite_cases: false  # Should classify as tax due to direct question about rate
+    language: ka
+
+  - id: cross_002
+    question: "დავების საბჭოს გადაწყვეტილებები მუხლი 168-თან დაკავშირებით"
+    mode: auto
+    should_use_both: ["tax", "dispute"]
+    expected_mentions_articles: ["168"]
+    should_cite_cases: true  # Should classify as dispute due to "დავების საბჭო"
+    language: ka
+
+  - id: cross_003
+    question: "როგორია საშემოსავლო გადასახადის პრაქტიკა ფიზიკური პირებისთვის?"
+    mode: auto
+    should_use_both: ["tax", "dispute"]
+    expected_contains: ["საშემოსავლო", "ფიზიკური"]
+    language: ka
+
+  - id: cross_004
+    question: "მუხლი 97 და მასთან დაკავშირებული სასამართლო გადაწყვეტილებები"
+    mode: auto
+    should_use_both: ["tax", "dispute"]
+    expected_mentions_articles: ["97"]
+    language: ka
+
+  - id: cross_005
+    question: "გასაჩივრებული გადაწყვეტილებები დღგ-ის ჩათვლასთან დაკავშირებით მუხლი 178"
+    mode: auto
+    should_use_both: ["tax", "dispute"]
+    expected_mentions_articles: ["178"]
+    should_cite_cases: true
+    language: ka

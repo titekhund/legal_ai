@@ -7,6 +7,7 @@ from datetime import date, datetime
 from unittest.mock import Mock, AsyncMock, patch
 import tempfile
 import shutil
+import numpy as np
 
 from app.services.dispute_service import (
     DisputeService,
@@ -35,20 +36,20 @@ def mock_vector_store(temp_index_dir):
     documents = [
         Document(
             id="dispute_001",
-            content="áÐáÐÛÐà×ÚÝÛ ÒÐÜØîØÚÐ ÓæÒ-á ÓÐÕÐ ÓÐ ÓÐÐÓÒØÜÐ, àÝÛ ÒÐÜÐÙÕÔ×Ø ãÜÓÐ ØçÝá 18% ÛãîÚØ 166-Øá ÛØîÔÓÕØ×.",
+            content="ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½-ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ 18% ï¿½ï¿½ï¿½ï¿½ï¿½ 166-ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.",
             metadata={
                 "case_id": "001",
-                "court": "ãÖÔÜÐÔáØ áÐáÐÛÐà×ÚÝ",
+                "court": "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
                 "date": "2023-05-15",
                 "cited_articles": ["166"]
             }
         ),
         Document(
             id="dispute_002",
-            content="áÐèÔÛÝáÐÕÚÝ ÒÐÓÐáÐîÐÓØá ÓÐÕÐèØ áÐáÐÛÐà×ÚÝÛ ÛîÐàØ ÓÐãíØàÐ ÒÐÓÐáÐîÐÓØá ÒÐÓÐÛîÓÔÚá.",
+            content="ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.",
             metadata={
                 "case_id": "002",
-                "court": "áÐåÐÚÐåÝ áÐáÐÛÐà×ÚÝ",
+                "court": "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
                 "date": "2023-06-20",
                 "cited_articles": ["168"]
             }
@@ -66,7 +67,7 @@ def mock_gemini_client():
     """Mock Gemini client"""
     client = Mock()
     client.generate_response = AsyncMock()
-    client.generate_response.return_value = "ÓæÒ-á ÒÐÜÐÙÕÔ×Ø ÐàØá 18 ÞàÝêÔÜâØ, àÝÒÝàê Ôá ÒÐÜáÐÖæÕàãÚØÐ ÛãîÚØ 166-Ø×. áÐåÛÔ #001 (2023-05-15) ÐÓÐáâãàÔÑá ÐÛ ÒÐÜÐÙÕÔ×á."
+    client.generate_response.return_value = "ï¿½ï¿½ï¿½-ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ 18 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ 166-ï¿½ï¿½. ï¿½ï¿½ï¿½ï¿½ï¿½ #001 (2023-05-15) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½."
     return client
 
 
@@ -76,13 +77,13 @@ class TestDisputeFilters:
     def test_filters_creation(self):
         """Test creating dispute filters"""
         filters = DisputeFilters(
-            court="ãÖÔÜÐÔáØ áÐáÐÛÐà×ÚÝ",
+            court="ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
             date_from=date(2023, 1, 1),
             date_to=date(2023, 12, 31),
             cited_articles=["166", "168"]
         )
 
-        assert filters.court == "ãÖÔÜÐÔáØ áÐáÐÛÐà×ÚÝ"
+        assert filters.court == "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"
         assert filters.date_from == date(2023, 1, 1)
         assert filters.date_to == date(2023, 12, 31)
         assert filters.cited_articles == ["166", "168"]
@@ -104,7 +105,7 @@ class TestDisputeCase:
         """Test creating a dispute case"""
         case = DisputeCase(
             case_id="001",
-            court="ãÖÔÜÐÔáØ áÐáÐÛÐà×ÚÝ",
+            court="ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
             date=date(2023, 5, 15),
             summary="Test summary",
             cited_articles=["166"],
@@ -113,7 +114,7 @@ class TestDisputeCase:
         )
 
         assert case.case_id == "001"
-        assert case.court == "ãÖÔÜÐÔáØ áÐáÐÛÐà×ÚÝ"
+        assert case.court == "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"
         assert case.relevance_score == 0.92
 
 
@@ -186,7 +187,7 @@ class TestDisputeService:
         )
         await service.initialize()
 
-        response = await service.query("àÐ ÐàØá ÓæÒ-á ÒÐÜÐÙÕÔ×Ø?")
+        response = await service.query("ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½-ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½?")
 
         assert isinstance(response, DisputeResponse)
         assert len(response.answer) > 0
@@ -204,16 +205,16 @@ class TestDisputeService:
         await service.initialize()
 
         filters = DisputeFilters(
-            court="ãÖÔÜÐÔáØ áÐáÐÛÐà×ÚÝ",
+            court="ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
             date_from=date(2023, 1, 1)
         )
 
-        response = await service.query("ÓæÒ", filters=filters)
+        response = await service.query("ï¿½ï¿½ï¿½", filters=filters)
 
         assert isinstance(response, DisputeResponse)
         # Cases should be filtered by court
         for case in response.cases_cited:
-            assert case.court == "ãÖÔÜÐÔáØ áÐáÐÛÐà×ÚÝ"
+            assert case.court == "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"
 
     @pytest.mark.asyncio
     async def test_query_no_results(self, temp_index_dir, mock_gemini_client):
@@ -227,7 +228,7 @@ class TestDisputeService:
 
         response = await service.query("test query")
 
-        assert response.answer == "ÕÔà ÛÝØëÔÑÜÐ àÔÚÔÕÐÜâãàØ áÐåÛÔÔÑØ ×åÕÔÜØ ÙØ×îÕØá×ÕØá."
+        assert response.answer == "ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½."
         assert len(response.cases_cited) == 0
         assert response.confidence == 0.0
 
@@ -247,7 +248,7 @@ class TestDisputeService:
         response = await service.query("test")
 
         # Should return error message
-        assert "ÕÔà ÛÝîÔàîÓÐ" in response.answer
+        assert "ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½" in response.answer
         assert response.model_used == "error"
 
     @pytest.mark.asyncio
@@ -263,7 +264,7 @@ class TestDisputeService:
 
         assert case is not None
         assert case.case_id == "001"
-        assert case.court == "ãÖÔÜÐÔáØ áÐáÐÛÐà×ÚÝ"
+        assert case.court == "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"
         assert case.relevance_score == 1.0
 
     @pytest.mark.asyncio
@@ -300,7 +301,7 @@ class TestDisputeService:
             gemini_client=mock_gemini_client
         )
 
-        text = "ÛãîÚØ 166 ÓÐ ÛãîÚØ 168 ÒÐÜáÐÖæÕàÐÕá ÓæÒ-á ìÔáÔÑá. ÛãîÚØ 82.1 ÐáÔÕÔ ÛÜØèÕÜÔÚÝÕÐÜØÐ."
+        text = "ï¿½ï¿½ï¿½ï¿½ï¿½ 166 ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ 168 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½-ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½. ï¿½ï¿½ï¿½ï¿½ï¿½ 82.1 ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½."
         articles = service._extract_tax_articles(text)
 
         assert "166" in articles
@@ -350,7 +351,7 @@ class TestDisputeService:
         cases = [
             DisputeCase(
                 case_id="001",
-                court="ãÖÔÜÐÔáØ áÐáÐÛÐà×ÚÝ",
+                court="ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
                 date=date(2023, 5, 15),
                 summary="Test case summary",
                 cited_articles=["166"],
@@ -361,9 +362,9 @@ class TestDisputeService:
 
         context = service._build_context(cases)
 
-        assert "áÐåÛÔ #1" in context
+        assert "ï¿½ï¿½ï¿½ï¿½ï¿½ #1" in context
         assert "001" in context
-        assert "ãÖÔÜÐÔáØ áÐáÐÛÐà×ÚÝ" in context
+        assert "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½" in context
         assert "166" in context
 
     def test_apply_date_filters(self, mock_vector_store, mock_gemini_client):
@@ -424,6 +425,225 @@ class TestDisputeService:
         assert len(filtered2) == 0
 
 
+class TestVectorStore:
+    """Test Vector Store search functionality with mocked embeddings"""
+
+    @pytest.fixture
+    def mock_embedding_model(self):
+        """Mock sentence transformer to avoid downloading models"""
+        mock_model = Mock()
+        # Return deterministic embeddings for testing
+        def mock_encode(texts, convert_to_numpy=False):
+            # Simple hash-based embeddings for testing
+            embeddings = []
+            for text in texts:
+                # Create a deterministic but varied embedding based on text
+                hash_val = hash(text) % 1000
+                embedding = np.array([float(hash_val % (i+1)) for i in range(384)])
+                embedding = embedding / np.linalg.norm(embedding)  # Normalize
+                embeddings.append(embedding)
+            return np.array(embeddings)
+
+        mock_model.encode = Mock(side_effect=mock_encode)
+        return mock_model
+
+    @pytest.mark.asyncio
+    async def test_vector_search(self, temp_index_dir, mock_embedding_model):
+        """Test pure vector similarity search"""
+        with patch('app.services.vector_store.SentenceTransformer', return_value=mock_embedding_model):
+            store = VectorStore(index_path=temp_index_dir)
+
+            # Add documents
+            documents = [
+                Document(
+                    id="vec_001",
+                    content="áƒ“áƒ¦áƒ’-áƒ¡ áƒ’áƒáƒœáƒáƒ™áƒ•áƒ”áƒ—áƒ˜ áƒáƒ áƒ˜áƒ¡ 18 áƒžáƒ áƒáƒªáƒ”áƒœáƒ¢áƒ˜ áƒ¡áƒáƒ¥áƒáƒ áƒ—áƒ•áƒ”áƒšáƒáƒ¨áƒ˜",
+                    metadata={"topic": "vat_rate", "date": "2023-01-15"}
+                ),
+                Document(
+                    id="vec_002",
+                    content="áƒ¡áƒáƒ¨áƒ”áƒ›áƒáƒ¡áƒáƒ•áƒšáƒ áƒ’áƒáƒ“áƒáƒ¡áƒáƒ®áƒáƒ“áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ™áƒ•áƒ”áƒ—áƒ˜ áƒáƒ áƒ˜áƒ¡ 20 áƒžáƒ áƒáƒªáƒ”áƒœáƒ¢áƒ˜",
+                    metadata={"topic": "income_tax", "date": "2023-02-20"}
+                ),
+                Document(
+                    id="vec_003",
+                    content="áƒ“áƒ¦áƒ’-áƒ˜áƒ¡ áƒ©áƒáƒ—áƒ•áƒšáƒ áƒ¨áƒ”áƒ¡áƒáƒ«áƒšáƒ”áƒ‘áƒ”áƒšáƒ˜áƒ áƒ›áƒ£áƒ®áƒšáƒ˜ 166-áƒ˜áƒ¡ áƒ›áƒ˜áƒ®áƒ”áƒ“áƒ•áƒ˜áƒ—",
+                    metadata={"topic": "vat_deduction", "date": "2023-03-10"}
+                )
+            ]
+
+            await store.add_documents(documents)
+
+            # Search for VAT-related content
+            results = await store.search("áƒ“áƒ¦áƒ’ áƒ’áƒáƒœáƒáƒ™áƒ•áƒ”áƒ—áƒ˜ áƒ áƒ áƒáƒ áƒ˜áƒ¡?", top_k=2)
+
+            assert len(results) > 0
+            assert all(r.match_type == "vector" for r in results)
+            assert all(0 <= r.score <= 1 for r in results)
+            # Results should be sorted by score
+            if len(results) > 1:
+                assert results[0].score >= results[1].score
+
+    @pytest.mark.asyncio
+    async def test_bm25_search(self, temp_index_dir, mock_embedding_model):
+        """Test BM25 keyword search"""
+        with patch('app.services.vector_store.SentenceTransformer', return_value=mock_embedding_model):
+            store = VectorStore(index_path=temp_index_dir)
+
+            # Add documents with distinctive keywords
+            documents = [
+                Document(
+                    id="bm25_001",
+                    content="áƒ“áƒáƒ™áƒ£áƒ›áƒ”áƒœáƒ¢áƒ˜áƒ¡ # Ð¢Ð”-2023-100 áƒ“áƒ¦áƒ’-áƒ˜áƒ¡ áƒ©áƒáƒ—áƒ•áƒšáƒ˜áƒ¡ áƒ¨áƒ”áƒ¡áƒáƒ®áƒ”áƒ‘ áƒ›áƒ£áƒ®áƒšáƒ˜ 166",
+                    metadata={"doc_number": "Ð¢Ð”-2023-100"}
+                ),
+                Document(
+                    id="bm25_002",
+                    content="áƒ“áƒáƒ™áƒ£áƒ›áƒ”áƒœáƒ¢áƒ˜áƒ¡ # Ð¢Ð”-2023-101 áƒ¡áƒáƒ¨áƒ”áƒ›áƒáƒ¡áƒáƒ•áƒšáƒ áƒ’áƒáƒ“áƒáƒ¡áƒáƒ®áƒáƒ“áƒ˜ áƒ›áƒ£áƒ®áƒšáƒ˜ 168",
+                    metadata={"doc_number": "Ð¢Ð”-2023-101"}
+                ),
+                Document(
+                    id="bm25_003",
+                    content="áƒ“áƒáƒ™áƒ£áƒ›áƒ”áƒœáƒ¢áƒ˜áƒ¡ # Ð¢Ð”-2023-102 áƒ“áƒ¦áƒ’ áƒ©áƒáƒ—áƒ•áƒšáƒ áƒ£áƒáƒ áƒ˜ áƒ“áƒáƒ›áƒ áƒ˜áƒªáƒ®áƒ•áƒ”áƒšáƒ˜ áƒáƒ áƒ’áƒáƒœáƒ",
+                    metadata={"doc_number": "Ð¢Ð”-2023-102"}
+                )
+            ]
+
+            await store.add_documents(documents)
+
+            # BM25 search with specific keywords
+            results = await store.bm25_search("áƒ“áƒ¦áƒ’ áƒ©áƒáƒ—áƒ•áƒšáƒ", top_k=2)
+
+            assert len(results) > 0
+            assert all(r.match_type == "bm25" for r in results)
+            assert all(0 <= r.score <= 1 for r in results)
+            # Should find documents with "áƒ“áƒ¦áƒ’" and "áƒ©áƒáƒ—áƒ•áƒšáƒ" keywords
+
+    @pytest.mark.asyncio
+    async def test_hybrid_search(self, temp_index_dir, mock_embedding_model):
+        """Test hybrid search combining vector and BM25"""
+        with patch('app.services.vector_store.SentenceTransformer', return_value=mock_embedding_model):
+            store = VectorStore(index_path=temp_index_dir)
+
+            # Add diverse documents
+            documents = [
+                Document(
+                    id="hyb_001",
+                    content="áƒ›áƒ£áƒ®áƒšáƒ˜ 166 áƒ’áƒáƒœáƒ¡áƒáƒ–áƒ¦áƒ•áƒ áƒáƒ•áƒ¡ áƒ“áƒ¦áƒ’-áƒ¡ áƒ’áƒáƒœáƒáƒ™áƒ•áƒ”áƒ—áƒ¡ 18 áƒžáƒ áƒáƒªáƒ”áƒœáƒ¢áƒáƒ“",
+                    metadata={"article": "166", "category": "áƒ“áƒ¦áƒ’"}
+                ),
+                Document(
+                    id="hyb_002",
+                    content="áƒ¡áƒáƒ‘áƒ­áƒáƒ¡ áƒ’áƒáƒ“áƒáƒ¬áƒ§áƒ•áƒ”áƒ¢áƒ˜áƒšáƒ”áƒ‘áƒ áƒ“áƒ¦áƒ’-áƒ˜áƒ¡ áƒ©áƒáƒ—áƒ•áƒšáƒ˜áƒ¡ áƒ£áƒ¤áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ¨áƒ”áƒ¡áƒáƒ®áƒ”áƒ‘",
+                    metadata={"article": "166", "category": "áƒ“áƒáƒ•áƒ"}
+                ),
+                Document(
+                    id="hyb_003",
+                    content="áƒ›áƒ£áƒ®áƒšáƒ˜ 168 áƒ¡áƒáƒ¨áƒ”áƒ›áƒáƒ¡áƒáƒ•áƒšáƒ áƒ’áƒáƒ“áƒáƒ¡áƒáƒ®áƒáƒ“áƒ˜áƒ¡ áƒ¨áƒ”áƒ¡áƒáƒ®áƒ”áƒ‘",
+                    metadata={"article": "168", "category": "áƒ¡áƒáƒ¨áƒ”áƒ›áƒáƒ¡áƒáƒ•áƒšáƒ"}
+                )
+            ]
+
+            await store.add_documents(documents)
+
+            # Hybrid search should combine semantic and keyword matching
+            results = await store.hybrid_search(
+                query="áƒ“áƒ¦áƒ’ áƒ©áƒáƒ—áƒ•áƒšáƒ áƒ›áƒ£áƒ®áƒšáƒ˜ 166",
+                top_k=3,
+                vector_weight=0.5,
+                bm25_weight=0.5
+            )
+
+            assert len(results) > 0
+            assert all(r.match_type == "hybrid" for r in results)
+            assert all(0 <= r.score <= 1 for r in results)
+            # Hybrid scores should be sorted descending
+            if len(results) > 1:
+                for i in range(len(results) - 1):
+                    assert results[i].score >= results[i+1].score
+
+    @pytest.mark.asyncio
+    async def test_metadata_filtering(self, temp_index_dir, mock_embedding_model):
+        """Test vector search with metadata filters"""
+        with patch('app.services.vector_store.SentenceTransformer', return_value=mock_embedding_model):
+            store = VectorStore(index_path=temp_index_dir)
+
+            # Add documents with different categories
+            documents = [
+                Document(
+                    id="filter_001",
+                    content="áƒ“áƒ¦áƒ’-áƒ¡ áƒ’áƒáƒœáƒáƒ™áƒ•áƒ”áƒ—áƒ˜ áƒ™áƒáƒ¢áƒ”áƒ’áƒáƒ áƒ˜áƒ A",
+                    metadata={"category": "áƒ“áƒ¦áƒ’", "year": "2023"}
+                ),
+                Document(
+                    id="filter_002",
+                    content="áƒ“áƒ¦áƒ’-áƒ¡ áƒ’áƒáƒœáƒáƒ™áƒ•áƒ”áƒ—áƒ˜ áƒ™áƒáƒ¢áƒ”áƒ’áƒáƒ áƒ˜áƒ B",
+                    metadata={"category": "áƒ¡áƒáƒ¨áƒ”áƒ›áƒáƒ¡áƒáƒ•áƒšáƒ", "year": "2023"}
+                ),
+                Document(
+                    id="filter_003",
+                    content="áƒ“áƒ¦áƒ’-áƒ¡ áƒ’áƒáƒœáƒáƒ™áƒ•áƒ”áƒ—áƒ˜ áƒ™áƒáƒ¢áƒ”áƒ’áƒáƒ áƒ˜áƒ C",
+                    metadata={"category": "áƒ“áƒ¦áƒ’", "year": "2024"}
+                )
+            ]
+
+            await store.add_documents(documents)
+
+            # Search with metadata filter
+            results = await store.search(
+                query="áƒ“áƒ¦áƒ’ áƒ’áƒáƒœáƒáƒ™áƒ•áƒ”áƒ—áƒ˜",
+                top_k=5,
+                filter_metadata={"category": "áƒ“áƒ¦áƒ’"}
+            )
+
+            # All results should match the filter
+            assert all(r.document.metadata.get("category") == "áƒ“áƒ¦áƒ’" for r in results)
+            # Should exclude filter_002 (category: áƒ¡áƒáƒ¨áƒ”áƒ›áƒáƒ¡áƒáƒ•áƒšáƒ)
+            doc_ids = [r.document.id for r in results]
+            assert "filter_002" not in doc_ids
+
+    @pytest.mark.asyncio
+    async def test_hybrid_search_with_weights(self, temp_index_dir, mock_embedding_model):
+        """Test hybrid search with different weight configurations"""
+        with patch('app.services.vector_store.SentenceTransformer', return_value=mock_embedding_model):
+            store = VectorStore(index_path=temp_index_dir)
+
+            documents = [
+                Document(
+                    id="weight_001",
+                    content="áƒ“áƒ¦áƒ’ áƒ’áƒáƒœáƒáƒ™áƒ•áƒ”áƒ—áƒ˜ áƒ¡áƒáƒ¥áƒáƒ áƒ—áƒ•áƒ”áƒšáƒáƒ¨áƒ˜ áƒáƒ áƒ˜áƒ¡ áƒáƒ—áƒ˜ áƒ áƒ•áƒ áƒžáƒ áƒáƒªáƒ”áƒœáƒ¢áƒ˜",
+                    metadata={"type": "explanation"}
+                ),
+                Document(
+                    id="weight_002",
+                    content="áƒ›áƒ£áƒ®áƒšáƒ˜ 166 áƒ“áƒ¦áƒ’",
+                    metadata={"type": "reference"}
+                )
+            ]
+
+            await store.add_documents(documents)
+
+            # Test with vector-heavy weighting
+            vector_heavy = await store.hybrid_search(
+                query="áƒ áƒ áƒáƒ áƒ˜áƒ¡ áƒ“áƒ¦áƒ’-áƒ¡ áƒ’áƒáƒœáƒáƒ™áƒ•áƒ”áƒ—áƒ˜?",
+                top_k=2,
+                vector_weight=0.8,
+                bm25_weight=0.2
+            )
+
+            # Test with BM25-heavy weighting
+            bm25_heavy = await store.hybrid_search(
+                query="áƒ›áƒ£áƒ®áƒšáƒ˜ 166 áƒ“áƒ¦áƒ’",
+                top_k=2,
+                vector_weight=0.2,
+                bm25_weight=0.8
+            )
+
+            assert len(vector_heavy) > 0
+            assert len(bm25_heavy) > 0
+            # Both should return results, but potentially in different order
+
+
 class TestDisputeSystemPrompt:
     """Test dispute system prompt"""
 
@@ -439,4 +659,4 @@ class TestDisputeSystemPrompt:
 
         assert "Test cases" in prompt
         assert "Test question" in prompt
-        assert "ÔåáÞÔàâØ" in prompt
+        assert "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½" in prompt

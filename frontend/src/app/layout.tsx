@@ -1,8 +1,7 @@
 /**
  * Root layout with Georgian font support
  */
-
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Toaster } from 'react-hot-toast';
 import './globals.css';
 
@@ -11,6 +10,12 @@ import './globals.css';
 const fontVariable = 'var(--font-noto-sans-georgian, system-ui, -apple-system, "Segoe UI", sans-serif)';
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'საგადასახადო კოდექსის AI ასისტენტი';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+};
 
 export const metadata: Metadata = {
   title: {
@@ -30,11 +35,6 @@ export const metadata: Metadata = {
   authors: [{ name: 'Georgian Legal AI' }],
   icons: {
     icon: '/favicon.ico',
-  },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
   },
   robots: {
     index: true,

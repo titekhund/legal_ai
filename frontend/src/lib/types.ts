@@ -8,7 +8,7 @@
 
 export interface ChatRequest {
   message: string;
-  mode?: 'tax' | 'dispute' | 'document';
+  mode?: 'tax' | 'dispute' | 'document' | 'auto';
   conversation_id?: string;
   language?: 'ka' | 'en';
 }
@@ -21,11 +21,12 @@ export interface ChatResponse {
   conversation_id: string;
   model_used?: string;
   processing_time_ms?: number;
+  warnings?: string[];
 }
 
 export interface ChatSources {
   tax_articles: TaxArticle[];
-  cases: any[];
+  cases: DisputeCase[];
   templates: any[];
 }
 
@@ -35,6 +36,14 @@ export interface TaxArticle {
   content: string;
   relevance_score: number;
   matsne_url?: string;
+}
+
+export interface DisputeCase {
+  doc_number?: string;
+  date?: string;
+  category?: string;
+  decision_type?: string;
+  snippet?: string;
 }
 
 export interface Conversation {
@@ -57,7 +66,10 @@ export interface Message {
   content: string;
   timestamp: string;
   sources?: ChatSources;
+  mode_used?: string;
 }
+
+export type QueryMode = 'tax' | 'dispute' | 'document' | 'auto';
 
 // ============================================================================
 // Component Props Types

@@ -34,6 +34,24 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isUser })
   // Process content to highlight citations for assistant messages
   const processedContent = !isUser ? highlightCitations(message.content) : message.content;
 
+  // Get mode badge info
+  const getModeInfo = (mode?: string) => {
+    switch (mode) {
+      case 'tax':
+        return { label: 'საგადასახადო კოდექსი', color: 'bg-blue-100 text-blue-800', bgTint: 'bg-blue-50' };
+      case 'dispute':
+        return { label: 'დავები', color: 'bg-purple-100 text-purple-800', bgTint: 'bg-purple-50' };
+      case 'document':
+        return { label: 'დოკუმენტი', color: 'bg-green-100 text-green-800', bgTint: 'bg-green-50' };
+      case 'auto':
+        return { label: 'ავტომატური', color: 'bg-gray-100 text-gray-800', bgTint: 'bg-gray-50' };
+      default:
+        return null;
+    }
+  };
+
+  const modeInfo = !isUser && message.mode_used ? getModeInfo(message.mode_used) : null;
+
   return (
     <div
       className={cn(
@@ -48,9 +66,24 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isUser })
           'max-w-[80%] rounded-lg px-4 py-3 relative',
           isUser
             ? 'bg-primary text-white'
-            : 'bg-white border border-gray-200 text-text'
+            : cn(
+                'border border-gray-200 text-text',
+                modeInfo?.bgTint || 'bg-white'
+              )
         )}
       >
+        {/* Mode badge for assistant messages */}
+        {!isUser && modeInfo && (
+          <div className="mb-2 flex items-center gap-2">
+            <span className={cn(
+              'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
+              modeInfo.color
+            )}>
+              {modeInfo.label}
+            </span>
+          </div>
+        )}
+
         {/* Timestamp on hover */}
         {showTimestamp && (
           <div

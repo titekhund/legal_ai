@@ -9,23 +9,25 @@ import { useChat } from '@/hooks/useChat';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { CitationPanel } from './CitationPanel';
+import { ModeSelector, DEFAULT_MODES } from './ModeSelector';
+import { ExampleQuestions } from './ExampleQuestions';
 import { Loading } from '@/components/ui/Loading';
-import type { ChatSources } from '@/lib/types';
+import type { QueryMode } from '@/lib/types';
 
 export interface ChatWindowProps {
   conversationId?: string;
-  mode?: 'tax' | 'dispute' | 'document';
+  mode?: QueryMode;
   language?: 'ka' | 'en';
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
   conversationId,
-  mode = 'tax',
+  mode: initialMode = 'auto',
   language = 'ka',
 }) => {
-  const { messages, isLoading, error, sendMessage } = useChat({
+  const { messages, isLoading, error, sendMessage, mode, setMode } = useChat({
     conversationId,
-    mode,
+    mode: initialMode,
     language,
   });
 
@@ -37,12 +39,43 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Get mode description for empty state
+  const getModeDescription = () => {
+    switch (mode) {
+      case 'tax':
+        return language === 'ka'
+          ? 'დაუსვით კითხვა საქართველოს საგადასახადო კოდექსთან დაკავშირებით'
+          : 'Ask a question about the Georgian Tax Code';
+      case 'dispute':
+        return language === 'ka'
+          ? 'დაუსვით კითხვა დავების პრაქტიკასთან დაკავშირებით'
+          : 'Ask a question about dispute practice';
+      case 'document':
+        return language === 'ka'
+          ? 'დაუსვით კითხვა დოკუმენტებთან დაკავშირებით'
+          : 'Ask a question about documents';
+      case 'auto':
+      default:
+        return language === 'ka'
+          ? 'დაუსვით ნებისმიერი კითხვა - სისტემა ავტომატურად აირჩევს შესაბამის რეჟიმს'
+          : 'Ask any question - the system will automatically choose the appropriate mode';
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-background">
+      {/* Mode Selector */}
+      <ModeSelector
+        currentMode={mode}
+        onModeChange={setMode}
+        availableModes={DEFAULT_MODES}
+        language={language}
+      />
+
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && !isLoading && (
-          <div className="flex flex-col items-center justify-center h-full text-center">
+          <div className="flex flex-col items-center justify-center h-full text-center px-4">
             <svg
               className="w-16 h-16 text-text-lighter mb-4"
               fill="none"
@@ -59,11 +92,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             <h3 className="text-xl font-semibold text-text mb-2">
               {language === 'ka' ? 'გამარჯობა!' : 'Hello!'}
             </h3>
-            <p className="text-text-light max-w-md">
-              {language === 'ka'
-                ? 'დაუსვით კითხვა საქართველოს საგადასახადო კოდექსთან დაკავშირებით'
-                : 'Ask a question about the Georgian Tax Code'}
+            <p className="text-text-light max-w-md mb-6">
+              {getModeDescription()}
             </p>
+
+            {/* Example Questions */}
+            <div className="w-full max-w-3xl">
+              <ExampleQuestions
+                mode={mode}
+                onQuestionClick={sendMessage}
+                language={language}
+              />
+            </div>
           </div>
         )}
 

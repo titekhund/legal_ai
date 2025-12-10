@@ -6,11 +6,11 @@
 
 import { useState, useCallback } from 'react';
 import APIClient, { APIClientError } from '@/lib/api';
-import type { Message, ChatSources } from '@/lib/types';
+import type { Message, ChatSources, QueryMode } from '@/lib/types';
 
 export interface UseChatOptions {
   conversationId?: string;
-  mode?: 'tax' | 'dispute' | 'document';
+  mode?: QueryMode;
   language?: 'ka' | 'en';
   onError?: (error: Error) => void;
 }
@@ -20,9 +20,10 @@ export interface UseChatReturn {
   isLoading: boolean;
   error: Error | null;
   conversationId: string | null;
+  mode: QueryMode;
   sendMessage: (content: string) => Promise<void>;
   clearMessages: () => void;
-  setMode: (mode: 'tax' | 'dispute' | 'document') => void;
+  setMode: (mode: QueryMode) => void;
   setLanguage: (language: 'ka' | 'en') => void;
 }
 
@@ -36,8 +37,8 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const [conversationId, setConversationId] = useState<string | null>(
     options.conversationId || null
   );
-  const [mode, setMode] = useState<'tax' | 'dispute' | 'document'>(
-    options.mode || 'tax'
+  const [mode, setMode] = useState<QueryMode>(
+    options.mode || 'auto'
   );
   const [language, setLanguage] = useState<'ka' | 'en'>(
     options.language || 'ka'
@@ -75,12 +76,13 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
           setConversationId(response.conversation_id);
         }
 
-        // Add assistant message
+        // Add assistant message with mode_used
         const assistantMessage: Message = {
           role: 'assistant',
           content: response.answer,
           timestamp: new Date().toISOString(),
           sources: response.sources,
+          mode_used: response.mode_used,
         };
         setMessages((prev) => [...prev, assistantMessage]);
       } catch (err) {
@@ -115,6 +117,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     isLoading,
     error,
     conversationId,
+    mode,
     sendMessage,
     clearMessages,
     setMode,

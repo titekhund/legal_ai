@@ -4,13 +4,14 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { Loading } from '@/components/ui/Loading';
 import APIClient from '@/lib/api';
 
-export default function ChatLayout({
+function ChatLayoutContent({
   children,
 }: {
   children: React.ReactNode;
@@ -147,5 +148,17 @@ export default function ChatLayout({
         </button>
       </div>
     </div>
+  );
+}
+
+export default function ChatLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen"><Loading size="lg" /></div>}>
+      <ChatLayoutContent>{children}</ChatLayoutContent>
+    </Suspense>
   );
 }

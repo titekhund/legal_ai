@@ -55,12 +55,12 @@ export default function DocumentPreview({
       }
 
       // Create download link
-      const a = document.createElement('a');
+      const a = window.document.createElement('a');
       a.href = link;
       a.download = `document-${document.document_type}-${Date.now()}.${format === 'markdown' ? 'md' : format}`;
-      document.body.appendChild(a);
+      window.document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      window.document.body.removeChild(a);
     } catch (err) {
       console.error('Download error:', err);
       alert('ჩამოტვირთვა ვერ მოხერხდა');

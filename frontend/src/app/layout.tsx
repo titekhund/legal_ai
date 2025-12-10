@@ -3,15 +3,12 @@
  */
 
 import type { Metadata } from 'next';
-import { Noto_Sans_Georgian } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import './globals.css';
 
-const notoSansGeorgian = Noto_Sans_Georgian({
-  subsets: ['latin', 'georgian'],
-  variable: '--font-noto-sans-georgian',
-  display: 'swap',
-});
+// Use system fonts as fallback for Georgian support
+// Vercel will automatically optimize fonts if Google Fonts are available
+const fontVariable = 'var(--font-noto-sans-georgian, system-ui, -apple-system, "Segoe UI", sans-serif)';
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'საგადასახადო კოდექსის AI ასისტენტი';
 
@@ -51,11 +48,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ka" className={notoSansGeorgian.variable}>
+    <html lang="ka">
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@100..900&display=swap"
+          rel="stylesheet"
+        />
       </head>
-      <body className={notoSansGeorgian.className}>
+      <body style={{ fontFamily: fontVariable }}>
         {children}
         <Toaster
           position="top-right"
@@ -65,7 +66,7 @@ export default function RootLayout({
               background: '#fff',
               color: '#1f2937',
               border: '1px solid #e5e7eb',
-              fontFamily: 'var(--font-noto-sans-georgian)',
+              fontFamily: fontVariable,
             },
             success: {
               iconTheme: {

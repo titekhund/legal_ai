@@ -73,7 +73,8 @@ export function formatTimeAgo(date: string | Date, locale: 'ka' | 'en' = 'ka'): 
 
   if (seconds < 30) return i.just_now;
 
-  const timeIntervals: [number, keyof typeof i.year][] = [
+  type IntervalKey = 'year' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second';
+  const timeIntervals: [number, IntervalKey][] = [
     [31536000, 'year'],
     [2592000, 'month'],
     [604800, 'week'],

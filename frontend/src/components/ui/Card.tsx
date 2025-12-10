@@ -78,3 +78,15 @@ export const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<
 );
 
 CardFooter.displayName = 'CardFooter';
+
+export const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
+  ({ className, ...props }, ref) => (
+    <p
+      ref={ref}
+      className={cn('text-sm text-gray-600', className)}
+      {...props}
+    />
+  )
+);
+
+CardDescription.displayName = 'CardDescription';

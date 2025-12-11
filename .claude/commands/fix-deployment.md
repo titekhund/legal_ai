@@ -9,6 +9,10 @@ I'm fetching the latest deployment errors from Google Cloud...
 ## Step 1: Fetching Cloud Build Logs
 
 ```bash
+echo "=== Setting Project ==="
+gcloud config set project tax-code-ai-backend 2>&1
+
+echo ""
 echo "=== CLOUD BUILD LOGS ==="
 gcloud builds list --limit=5 --format="table(id,status,createTime,logUrl)" 2>&1 || echo "Failed to fetch build list"
 
@@ -29,6 +33,7 @@ fi
 ```bash
 echo ""
 echo "=== CLOUD RUN SERVICE STATUS ==="
+gcloud config set project tax-code-ai-backend 2>&1
 gcloud run services describe legal-ai-backend --region=us-central1 --format="yaml(status)" 2>&1 || echo "Failed to fetch Cloud Run status"
 ```
 

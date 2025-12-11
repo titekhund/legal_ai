@@ -9,6 +9,10 @@ Fetching current deployment status from Google Cloud...
 ## Cloud Build Status
 
 ```bash
+echo "=== Setting Project ==="
+gcloud config set project tax-code-ai-backend 2>&1
+
+echo ""
 echo "=== RECENT BUILDS ==="
 gcloud builds list --limit=10 --format="table(id,status,createTime,duration)" 2>&1 || echo "Failed to fetch builds"
 ```

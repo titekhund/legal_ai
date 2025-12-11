@@ -52,7 +52,7 @@ Checks deployment status and shows recent errors (read-only).
 
 These commands require:
 1. `gcloud` CLI installed and authenticated
-2. Project ID configured: `gcloud config set project YOUR_PROJECT_ID`
+2. Project ID configured: `gcloud config set project tax-code-ai-backend`
 3. Proper IAM permissions for:
    - Cloud Build (read logs)
    - Cloud Run (read/describe services)
@@ -69,9 +69,8 @@ If you haven't configured gcloud yet:
 # Login
 gcloud auth login
 
-# Set your project
-export GCP_PROJECT_ID="your-project-id"
-gcloud config set project $GCP_PROJECT_ID
+# Set your project (commands do this automatically)
+gcloud config set project tax-code-ai-backend
 ```
 
 ## Examples

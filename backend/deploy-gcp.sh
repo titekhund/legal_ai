@@ -44,7 +44,7 @@ gcloud run deploy ${SERVICE_NAME} \
     --cpu 2 \
     --timeout 300 \
     --max-instances 10 \
-    --set-env-vars "ENVIRONMENT=production"
+    --set-env-vars "ENVIRONMENT=production,GEMINI_API_KEY=${GEMINI_API_KEY:-placeholder},CORS_ORIGINS=https://taxcodeai.vercel.app,LOG_LEVEL=INFO"
 
 # Step 5: Get the service URL
 SERVICE_URL=$(gcloud run services describe ${SERVICE_NAME} --region ${REGION} --format 'value(status.url)')

@@ -43,6 +43,7 @@ gcloud run deploy ${SERVICE_NAME} \
     --memory 2Gi \
     --cpu 2 \
     --timeout 300 \
+    --min-instances 0 \
     --max-instances 10 \
     --set-env-vars "ENVIRONMENT=production"
 

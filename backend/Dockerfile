@@ -12,6 +12,8 @@ COPY requirements.txt .
 
 # Install Python dependencies with optimizations
 RUN pip install --no-cache-dir -r requirements.txt && \
+    # Pre-download sentence-transformers model to avoid startup timeout
+    python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')" && \
     # Remove unnecessary files to reduce image size
     find /usr/local/lib/python3.11/site-packages -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true && \
     find /usr/local/lib/python3.11/site-packages -type d -name "test" -exec rm -rf {} + 2>/dev/null || true && \

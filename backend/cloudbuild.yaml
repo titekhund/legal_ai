@@ -27,6 +27,10 @@ steps:
       - '2'
       - '--timeout'
       - '300'
+      - '--min-instances'
+      - '0'
+      - '--max-instances'
+      - '10'
 
 images:
   - 'gcr.io/$PROJECT_ID/legal-ai-backend'

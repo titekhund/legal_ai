@@ -7,7 +7,7 @@ set -e
 echo "🚀 Deploying Legal AI Backend to Google Cloud Run..."
 
 # Configuration
-PROJECT_ID=${GCP_PROJECT_ID:-"your-project-id"}
+PROJECT_ID=${GCP_PROJECT_ID:-"tax-code-ai-backend"}
 REGION="us-central1"
 SERVICE_NAME="legal-ai-backend"
 IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}"

@@ -16,7 +16,7 @@ from app.models.schemas import (
     DocumentType,
     GeneratedDocument,
 )
-from app.services.llm_clients import GeminiClient
+from app.services.llm_client import GeminiClient
 from app.services.tax_service import TaxCodeService
 from app.services.template_store import TemplateStore
 

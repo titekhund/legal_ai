@@ -13,7 +13,7 @@ from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 
 from app.services.vector_store import VectorStore, SearchResult
-from app.services.llm_clients import GeminiClient, ClaudeClient
+from app.services.llm_client import GeminiClient, ClaudeClient
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)

@@ -89,8 +89,8 @@ class GeminiClient(LLMClient):
     # Model preferences (in order)
     PREFERRED_MODELS = [
         "gemini-2.0-flash-exp",
-        "gemini-1.5-flash",
-        "gemini-1.5-pro"
+        "gemini-2.5-flash",
+        "gemini-2.5-pro"
     ]
 
     # Generation configuration
@@ -157,12 +157,12 @@ class GeminiClient(LLMClient):
                 return fallback
 
             # Last resort
-            logger.warning("No models found, using default: gemini-1.5-flash")
-            return "gemini-1.5-flash"
+            logger.warning("No models found, using default: gemini-2.5-flash")
+            return "gemini-2.5-flash"
 
         except Exception as e:
             logger.warning(f"Error listing models: {e}, using default")
-            return "gemini-1.5-flash"
+            return "gemini-2.5-flash"
 
     async def _retry_with_backoff(
         self,

@@ -22,6 +22,11 @@ RUN pip install --no-cache-dir -r requirements.txt && \
 
 # Copy application
 COPY app/ ./app/
+
+# Copy data directory - contains templates and other data files
+# Note: The data directory should contain templates/, tax_code/, and disputes/ subdirectories
+# If building from backend/ context, ensure data/ is properly populated
+# If building from root context with -f backend/Dockerfile, use data/ from root
 COPY data/ ./data/
 
 # Set environment variables

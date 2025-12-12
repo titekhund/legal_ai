@@ -27,6 +27,18 @@ steps:
       - '2'
       - '--timeout'
       - '300'
+      - '--set-env-vars'
+      - 'ENVIRONMENT=prod,LOG_LEVEL=INFO,CORS_ORIGINS=*'
+      - '--set-secrets'
+      - 'GEMINI_API_KEY=gemini-api-key:latest'
+
+# Note: Before deployment, create the secret in Secret Manager:
+# gcloud secrets create gemini-api-key --replication-policy="automatic"
+# echo -n "your-api-key" | gcloud secrets versions add gemini-api-key --data-file=-
+# Grant Cloud Run access to the secret:
+# gcloud secrets add-iam-policy-binding gemini-api-key \
+#   --member="serviceAccount:YOUR-PROJECT-NUMBER-compute@developer.gserviceaccount.com" \
+#   --role="roles/secretmanager.secretAccessor"
 
 images:
   - 'gcr.io/$PROJECT_ID/legal-ai-backend'

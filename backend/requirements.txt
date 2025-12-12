@@ -24,10 +24,10 @@ structlog==24.1.0
 python-json-logger==2.0.7
 
 # Vector Store and Embeddings
-faiss-cpu==1.7.4
+faiss-cpu>=1.8.0
 sentence-transformers>=3.0.0
 rank-bm25==0.2.2
-numpy==1.24.3
+numpy>=1.26.0
 
 # Testing
 pytest==7.4.4

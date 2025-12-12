@@ -126,3 +126,51 @@ export interface ServiceStatus {
     message?: string;
   };
 }
+
+// ============================================================================
+// Authentication Types
+// ============================================================================
+
+export interface User {
+  id: string;
+  email: string;
+  full_name?: string;
+  is_active: boolean;
+  is_verified: boolean;
+  daily_requests_count: number;
+  daily_requests_remaining: number;
+  monthly_requests_count: number;
+  monthly_requests_remaining: number;
+  total_requests_count: number;
+  created_at: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  user: User;
+}
+
+export interface UsageInfo {
+  daily_used: number;
+  daily_limit: number;
+  daily_remaining: number;
+  monthly_used: number;
+  monthly_limit: number;
+  monthly_remaining: number;
+  total_used: number;
+  daily_resets_at: string;
+  monthly_resets_at: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  full_name?: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}

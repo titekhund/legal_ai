@@ -56,8 +56,29 @@ class Settings(BaseSettings):
     api_host: str = Field("0.0.0.0", description="API server host")
     api_port: int = Field(8000, description="API server port")
 
-    # Database (optional for future use)
+    # Database
     database_url: Optional[str] = Field(None, description="Database connection URL")
+
+    # JWT Authentication
+    jwt_secret_key: str = Field(
+        "your-secret-key-change-in-production",
+        description="Secret key for JWT token signing"
+    )
+    jwt_algorithm: str = Field("HS256", description="JWT algorithm")
+    jwt_access_token_expire_minutes: int = Field(
+        1440,  # 24 hours
+        description="Access token expiration time in minutes"
+    )
+
+    # User Usage Limits
+    daily_request_limit: int = Field(
+        50,
+        description="Maximum chat requests per user per day"
+    )
+    monthly_request_limit: int = Field(
+        1000,
+        description="Maximum chat requests per user per month"
+    )
 
     # Vector Database (optional for future use)
     vector_db_type: Optional[str] = Field(None, description="Vector database type (pinecone/weaviate/chroma)")

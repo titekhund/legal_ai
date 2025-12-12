@@ -11,7 +11,7 @@ from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from app.api.v1 import admin, chat, conversations, documents, health
+from app.api.v1 import admin, auth, chat, conversations, documents, health
 from app.core import (
     get_logger,
     get_settings,
@@ -106,6 +106,7 @@ async def lifespan(app: FastAPI):
     while /status shows actual service readiness.
     """
     import asyncio
+    from app.db import init_db, close_db
 
     # Startup
     logger.info("Starting Legal AI application...")
@@ -115,6 +116,15 @@ async def lifespan(app: FastAPI):
         log_level=settings.log_level,
         environment=settings.environment
     )
+
+    # Initialize database
+    try:
+        logger.info("Initializing database...")
+        await init_db()
+        logger.info("Database initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
+        logger.warning("Database features will not be available")
 
     # Start service initialization in background (non-blocking)
     # This allows the server to start quickly and respond to health checks
@@ -128,6 +138,7 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("Shutting down Legal AI application...")
+    await close_db()
 
 
 # Create FastAPI application
@@ -145,6 +156,10 @@ app = FastAPI(
         {
             "name": "health",
             "description": "Health check and service status endpoints | სერვისის სტატუსის შემოწმება"
+        },
+        {
+            "name": "auth",
+            "description": "User authentication and registration | მომხმარებლის ავტორიზაცია და რეგისტრაცია"
         },
         {
             "name": "chat",
@@ -386,6 +401,12 @@ app.include_router(
     health.router,
     prefix="/v1",
     tags=["health"]
+)
+
+app.include_router(
+    auth.router,
+    prefix="/v1",
+    tags=["auth"]
 )
 
 app.include_router(

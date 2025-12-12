@@ -40,22 +40,13 @@ document_service: DocumentService = None
 orchestrator: Orchestrator = None
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+async def initialize_services_background():
     """
-    Application lifespan manager for startup and shutdown events
+    Initialize services in background (non-blocking for Cloud Run startup)
     """
-    # Startup
-    logger.info("Starting Legal AI application...")
-
-    # Setup logging
-    setup_logging(
-        log_level=settings.log_level,
-        environment=settings.environment
-    )
+    global tax_service, dispute_service, document_service, orchestrator
 
     # Initialize tax service
-    global tax_service, dispute_service, orchestrator
     tax_service = TaxCodeService()
 
     try:
@@ -102,7 +93,36 @@ async def lifespan(app: FastAPI):
     documents.set_document_service(document_service)
     admin.set_services(tax_service, dispute_service, document_service)
 
+    logger.info("All services initialized")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Application lifespan manager for startup and shutdown events
+
+    Note: Service initialization runs in background to allow fast startup
+    for Cloud Run health checks. The /health endpoint returns immediately,
+    while /status shows actual service readiness.
+    """
+    import asyncio
+
+    # Startup
+    logger.info("Starting Legal AI application...")
+
+    # Setup logging
+    setup_logging(
+        log_level=settings.log_level,
+        environment=settings.environment
+    )
+
+    # Start service initialization in background (non-blocking)
+    # This allows the server to start quickly and respond to health checks
+    logger.info("Starting background service initialization...")
+    asyncio.create_task(initialize_services_background())
+
     logger.info(f"Legal AI application started in {settings.environment} mode")
+    logger.info("Server ready to accept requests (services initializing in background)")
 
     yield  # Application is running
 
@@ -342,6 +362,22 @@ async def root():
         "description_ka": "ხელოვნური ინტელექტის იურიდიული ასისტენტი საქართველოს საგადასახადო კოდექსისა და სამართლებრივი კვლევებისთვის",
         "docs": "/docs",
         "redoc": "/redoc"
+    }
+
+
+# Root-level health check for Cloud Run
+@app.get("/health")
+async def root_health():
+    """
+    Root-level health check for Cloud Run and load balancers
+
+    This endpoint returns immediately without checking service status.
+    Use /v1/status for detailed service readiness.
+    """
+    from datetime import datetime
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat() + "Z"
     }
 
 

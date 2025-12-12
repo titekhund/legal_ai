@@ -33,6 +33,10 @@ COPY data/ ./data/
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
+# Expose port (informational)
+EXPOSE 8080
+
 # Run with uvicorn
-# Cloud Run sets PORT environment variable, default to 8000 for local dev
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Cloud Run sets PORT environment variable, default to 8080 for Cloud Run
+# Using shell form to properly expand environment variables
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

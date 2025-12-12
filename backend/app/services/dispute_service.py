@@ -3,16 +3,23 @@ Dispute RAG Service for Legal Case Retrieval and Analysis
 
 This service combines vector search with LLM generation to answer
 questions about Georgian tax dispute cases using RAG (Retrieval-Augmented Generation).
+
+Note: Using dataclasses instead of Pydantic to avoid schema generation recursion
+issues that occur in certain Python/Pydantic version combinations.
 """
+from __future__ import annotations
 
 import re
 import time
+from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, TYPE_CHECKING
 
-from pydantic import BaseModel, Field
+# Use TYPE_CHECKING to avoid heavy imports at module load time
+# This prevents sentence_transformers from being loaded when this module is imported
+if TYPE_CHECKING:
+    from app.services.vector_store import VectorStore, SearchResult
 
-from app.services.vector_store import VectorStore, SearchResult
 from app.services.llm_client import GeminiClient, ClaudeClient
 from app.core.logging import get_logger
 
@@ -46,107 +53,58 @@ DISPUTE_SYSTEM_PROMPT = """
 """
 
 
-class DisputeFilters(BaseModel):
+@dataclass
+class DisputeFilters:
     """Filters for dispute case search"""
-    court: Optional[str] = Field(
-        None,
-        description="Court name (e.g., 'áÐÙÝÜáâØâãêØÝ', 'ãÖÔÜÐÔáØ')"
-    )
-    date_from: Optional[date] = Field(
-        None,
-        description="Filter cases from this date onwards"
-    )
-    date_to: Optional[date] = Field(
-        None,
-        description="Filter cases up to this date"
-    )
-    cited_articles: Optional[List[str]] = Field(
-        None,
-        description="Filter by cited tax code articles"
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "court": "ãÖÔÜÐÔáØ áÐáÐÛÐà×ÚÝ",
-                "date_from": "2023-01-01",
-                "date_to": "2023-12-31",
-                "cited_articles": ["166", "168"]
-            }
-        }
+    court: Optional[str] = None
+    date_from: Optional[date] = None
+    date_to: Optional[date] = None
+    cited_articles: Optional[List[str]] = None
 
 
-class DisputeCase(BaseModel):
+@dataclass
+class DisputeCase:
     """Dispute case model"""
-    case_id: str = Field(..., description="Unique case identifier")
-    court: str = Field(..., description="Court name")
-    date: date = Field(..., description="Case decision date")
-    summary: str = Field(..., description="Case summary/excerpt")
-    cited_articles: List[str] = Field(
-        default_factory=list,
-        description="Tax code articles cited in case"
-    )
-    relevance_score: float = Field(..., description="Relevance to query (0-1)")
-    full_text_available: bool = Field(
-        default=True,
-        description="Whether full case text is available"
-    )
+    case_id: str
+    court: str
+    case_date: date
+    summary: str
+    relevance_score: float
+    cited_articles: List[str] = field(default_factory=list)
+    full_text_available: bool = True
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "case_id": "001",
-                "court": "ãÖÔÜÐÔáØ áÐáÐÛÐà×ÚÝ",
-                "date": "2023-05-15",
-                "summary": "áÐáÐÛÐà×ÚÝÛ ÒÐÜØîØÚÐ ÓæÒ-á ÓÐÕÐ...",
-                "cited_articles": ["166", "165"],
-                "relevance_score": 0.92,
-                "full_text_available": True
-            }
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for API responses"""
+        return {
+            "case_id": self.case_id,
+            "court": self.court,
+            "case_date": self.case_date.isoformat() if self.case_date else None,
+            "summary": self.summary,
+            "cited_articles": self.cited_articles,
+            "relevance_score": self.relevance_score,
+            "full_text_available": self.full_text_available
         }
 
 
-class DisputeResponse(BaseModel):
+@dataclass
+class DisputeResponse:
     """Response from dispute query"""
-    answer: str = Field(..., description="Generated answer to the question")
-    cases_cited: List[DisputeCase] = Field(
-        default_factory=list,
-        description="Relevant cases cited in answer"
-    )
-    relevant_tax_articles: List[str] = Field(
-        default_factory=list,
-        description="Tax code articles mentioned"
-    )
-    confidence: float = Field(
-        ...,
-        description="Confidence in answer quality (0-1)"
-    )
-    model_used: str = Field(..., description="LLM model used for generation")
-    processing_time_ms: int = Field(
-        ...,
-        description="Total processing time in milliseconds"
-    )
+    answer: str
+    confidence: float
+    model_used: str
+    processing_time_ms: int
+    cases_cited: List[DisputeCase] = field(default_factory=list)
+    relevant_tax_articles: List[str] = field(default_factory=list)
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "answer": "ÓæÒ-á ÒÐÜÐÙÕÔ×Ø ÐàØá 18%...",
-                "cases_cited": [
-                    {
-                        "case_id": "001",
-                        "court": "ãÖÔÜÐÔáØ áÐáÐÛÐà×ÚÝ",
-                        "date": "2023-05-15",
-                        "summary": "...",
-                        "cited_articles": ["166"],
-                        "relevance_score": 0.92,
-                        "full_text_available": True
-                    }
-                ],
-                "relevant_tax_articles": ["166", "165"],
-                "confidence": 0.88,
-                "model_used": "gemini-pro",
-                "processing_time_ms": 1250
-            }
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for API responses"""
+        return {
+            "answer": self.answer,
+            "cases_cited": [case.to_dict() for case in self.cases_cited],
+            "relevant_tax_articles": self.relevant_tax_articles,
+            "confidence": self.confidence,
+            "model_used": self.model_used,
+            "processing_time_ms": self.processing_time_ms
         }
 
 
@@ -160,7 +118,7 @@ class DisputeService:
 
     def __init__(
         self,
-        vector_store: VectorStore,
+        vector_store: Optional["VectorStore"] = None,
         gemini_client: Optional[GeminiClient] = None,
         claude_client: Optional[ClaudeClient] = None
     ):
@@ -168,7 +126,7 @@ class DisputeService:
         Initialize dispute service
 
         Args:
-            vector_store: Vector store with dispute cases
+            vector_store: Vector store with dispute cases (optional, can be initialized later)
             gemini_client: Gemini LLM client (primary)
             claude_client: Claude LLM client (fallback)
         """
@@ -187,6 +145,12 @@ class DisputeService:
             True if initialization successful
         """
         try:
+            # Check if vector store is configured
+            if self.vector_store is None:
+                logger.warning("No vector store configured - dispute service will be limited")
+                self._initialized = True
+                return True
+
             # Check if vector store has documents
             stats = self.vector_store.get_stats()
             doc_count = stats.get("total_documents", 0)
@@ -226,6 +190,17 @@ class DisputeService:
 
         if not self._initialized:
             await self.initialize()
+
+        # Check if vector store is available
+        if self.vector_store is None:
+            return DisputeResponse(
+                answer="სადავო საქმეების სერვისი ამჟამად მიუწვდომელია.",
+                cases_cited=[],
+                relevant_tax_articles=[],
+                confidence=0.0,
+                model_used="none",
+                processing_time_ms=int((time.time() - start_time) * 1000)
+            )
 
         logger.info(f"Processing dispute query: {question[:100]}...")
 
@@ -288,9 +263,9 @@ class DisputeService:
 
     def _apply_filters(
         self,
-        results: List[SearchResult],
+        results: List["SearchResult"],
         filters: Optional[DisputeFilters]
-    ) -> List[SearchResult]:
+    ) -> List["SearchResult"]:
         """Apply date and article filters to search results"""
         if not filters:
             return results
@@ -328,7 +303,7 @@ class DisputeService:
 
     def _convert_to_dispute_cases(
         self,
-        search_results: List[SearchResult]
+        search_results: List["SearchResult"]
     ) -> List[DisputeCase]:
         """Convert search results to DisputeCase objects"""
         cases = []
@@ -346,7 +321,7 @@ class DisputeService:
             case = DisputeCase(
                 case_id=metadata.get("case_id", result.document.id),
                 court=metadata.get("court", "ãêÜÝÑØ áÐáÐÛÐà×ÚÝ"),
-                date=case_date,
+                case_date=case_date,
                 summary=result.document.content[:500],  # First 500 chars as summary
                 cited_articles=metadata.get("cited_articles", []),
                 relevance_score=result.score,
@@ -365,7 +340,7 @@ class DisputeService:
             context_parts.append(
                 f"áÐåÛÔ #{i} (ID: {case.case_id})\n"
                 f"áÐáÐÛÐà×ÚÝ: {case.court}\n"
-                f"×ÐàØæØ: {case.date}\n"
+                f"×ÐàØæØ: {case.case_date}\n"
                 f"êØâØàÔÑãÚØ ÛãîÚÔÑØ: {', '.join(case.cited_articles) if case.cited_articles else 'Ðà ÐàØá ÛØ×Ø×ÔÑãÚØ'}\n"
                 f"èØÜÐÐàáØ: {case.summary}\n"
             )
@@ -453,6 +428,11 @@ class DisputeService:
         if not self._initialized:
             await self.initialize()
 
+        # Check if vector store is available
+        if self.vector_store is None:
+            logger.warning("Vector store not configured, cannot retrieve case")
+            return None
+
         # Search through all documents
         for doc in self.vector_store.documents:
             if doc.metadata.get("case_id") == case_id or doc.id == case_id:
@@ -468,7 +448,7 @@ class DisputeService:
                 return DisputeCase(
                     case_id=metadata.get("case_id", doc.id),
                     court=metadata.get("court", "ãêÜÝÑØ áÐáÐÛÐà×ÚÝ"),
-                    date=case_date,
+                    case_date=case_date,
                     summary=doc.content,  # Full content as summary
                     cited_articles=metadata.get("cited_articles", []),
                     relevance_score=1.0,  # Direct lookup, perfect match
@@ -485,6 +465,18 @@ class DisputeService:
         Returns:
             Dictionary with status information
         """
+        if self.vector_store is None:
+            return {
+                "initialized": self._initialized,
+                "ready": False,
+                "total_cases": 0,
+                "embedding_model": "not_configured",
+                "index_path": "not_configured",
+                "gemini_available": self.gemini_client is not None,
+                "claude_available": self.claude_client is not None,
+                "message": "Vector store not configured"
+            }
+
         stats = self.vector_store.get_stats()
 
         return {

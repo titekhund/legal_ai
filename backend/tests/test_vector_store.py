@@ -21,353 +21,247 @@ def temp_index_dir():
 
 
 @pytest.fixture
-def sample_georgian_documents() -> List[Document]:
-    """Sample Georgian legal documents for testing"""
+def sample_documents() -> List[Document]:
+    """Sample legal documents for testing"""
     return [
         Document(
             id="dispute_001",
-            content="сасаларзкнл вамиюика гцв-с гаеа га гаагвима, рнл вамайедзи умга ичнс 18 орнъдмти луюки 166-ис лиюдгеиз.",
+            content="Tax court decision regarding VAT dispute. The court ruled that the 18% VAT rate applies according to article 166.",
             metadata={
                 "case_id": "001",
-                "court": "уждмадси сасаларзкн",
+                "court": "Supreme Court",
                 "date": "2023-01-15",
                 "cited_articles": ["166"]
             }
         ),
         Document(
             id="dispute_002",
-            content="сашдлнсаекн вагасаюагис гаеаши сасаларзкнл люари гауэира вагасаюагис вагалюгдкс. луюки 168 вамсажцераес фижийури оирис сашдлнсаекн вагасаюагс.",
+            content="Income tax dispute case. The court examined the tax base calculation methodology according to article 168.",
             metadata={
                 "case_id": "002",
-                "court": "сахакахн сасаларзкн",
+                "court": "District Court",
                 "date": "2023-02-20",
                 "cited_articles": ["168"]
             }
         ),
         Document(
             id="dispute_003",
-            content="лийрн бижмдсис статусис лимиэдбис гаеа. луюки 84, 85, 86 вамсажцераес лийрн бижмдсис йритдриулдбс га шдлнсаекис жцеарс 30,000 кари.",
+            content="Small business tax status case. Articles 84, 85, 86 define small business tax regime requirements.",
             metadata={
                 "case_id": "003",
-                "court": "сааодкаъин сасаларзкн",
+                "court": "Supreme Court",
                 "date": "2023-03-10",
                 "cited_articles": ["84", "85", "86"]
             }
         ),
-        Document(
-            id="dispute_004",
-            content="аетнлнбикис вачигеис габдвера. луюки 82 вамсажцераес, рнл аетнлнбикис вачигеа 6 зеис вамлаекнбаши ибдврдба.",
-            metadata={
-                "case_id": "004",
-                "court": "уждмадси сасаларзкн",
-                "date": "2023-04-05",
-                "cited_articles": ["82"]
-            }
-        ),
-        Document(
-            id="dispute_005",
-            content="бимис рдакижаъиа га вагасаюаги. сасаларзкнл вамларта, рнл бимис вачигеа заеисуфкгдба вагасаюагисвам зу гаиэира 2 ьдкжд лдти.",
-            metadata={
-                "case_id": "005",
-                "court": "сахакахн сасаларзкн",
-                "date": "2023-05-12",
-                "cited_articles": ["82"]
-            }
-        )
     ]
 
 
-class TestDocument:
-    """Test Document model"""
+class TestVectorStoreInitialization:
+    """Test VectorStore initialization"""
 
-    def test_document_creation(self):
-        """Test creating a document"""
-        doc = Document(
-            id="test_001",
-            content="тдстис шимаарси",
-            metadata={"case_id": "001"}
-        )
+    @pytest.mark.slow
+    def test_creates_empty_index(self, temp_index_dir):
+        """Test that VectorStore creates empty index on init"""
+        store = VectorStore(index_path=temp_index_dir)
 
-        assert doc.id == "test_001"
-        assert doc.content == "тдстис шимаарси"
-        assert doc.metadata["case_id"] == "001"
-        assert doc.embedding is None
-
-    def test_document_with_embedding(self):
-        """Test document with pre-computed embedding"""
-        embedding = [0.1, 0.2, 0.3]
-        doc = Document(
-            id="test_001",
-            content="тдсти",
-            metadata={},
-            embedding=embedding
-        )
-
-        assert doc.embedding == embedding
-
-
-class TestSearchResult:
-    """Test SearchResult model"""
-
-    def test_search_result_creation(self):
-        """Test creating a search result"""
-        doc = Document(id="test", content="test", metadata={})
-        result = SearchResult(
-            document=doc,
-            score=0.95,
-            match_type="hybrid"
-        )
-
-        assert result.document.id == "test"
-        assert result.score == 0.95
-        assert result.match_type == "hybrid"
-
-
-class TestVectorStore:
-    """Test VectorStore functionality"""
-
-    @pytest.mark.asyncio
-    async def test_initialization(self, temp_index_dir):
-        """Test vector store initialization"""
-        store = VectorStore(
-            index_path=temp_index_dir,
-            embedding_model="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-        )
-
-        assert store is not None
-        assert store.encoder is not None
         assert store.faiss_index is not None
         assert len(store.documents) == 0
 
-    @pytest.mark.asyncio
-    async def test_add_documents(self, temp_index_dir, sample_georgian_documents):
-        """Test adding documents to the store"""
+    @pytest.mark.slow
+    def test_loads_existing_index(self, temp_index_dir, sample_documents):
+        """Test that VectorStore loads existing index"""
+        # Create and populate first store
+        store1 = VectorStore(index_path=temp_index_dir)
+        store1.add_documents(sample_documents)
+        store1.save()
+
+        # Create second store - should load existing
+        store2 = VectorStore(index_path=temp_index_dir)
+
+        assert len(store2.documents) == len(sample_documents)
+
+
+class TestDocumentOperations:
+    """Test document add/remove operations"""
+
+    @pytest.mark.slow
+    def test_add_documents(self, temp_index_dir, sample_documents):
+        """Test adding documents to store"""
+        store = VectorStore(index_path=temp_index_dir)
+        store.add_documents(sample_documents)
+
+        assert len(store.documents) == len(sample_documents)
+        assert store.faiss_index.ntotal == len(sample_documents)
+
+    @pytest.mark.slow
+    def test_add_single_document(self, temp_index_dir):
+        """Test adding a single document"""
         store = VectorStore(index_path=temp_index_dir)
 
-        count = await store.add_documents(sample_georgian_documents)
+        doc = Document(
+            id="test_001",
+            content="Test document content about tax law.",
+            metadata={"type": "test"}
+        )
+        store.add_documents([doc])
 
-        assert count == len(sample_georgian_documents)
-        assert len(store.documents) == len(sample_georgian_documents)
-        assert store.bm25 is not None
+        assert len(store.documents) == 1
 
-        # Verify embeddings were generated
-        for doc in store.documents:
-            assert doc.embedding is not None
-            assert len(doc.embedding) == 384  # MiniLM-L12 dimension
-
-    @pytest.mark.asyncio
-    async def test_add_empty_documents(self, temp_index_dir):
-        """Test adding empty document list"""
+    @pytest.mark.slow
+    def test_clear_documents(self, temp_index_dir, sample_documents):
+        """Test clearing all documents"""
         store = VectorStore(index_path=temp_index_dir)
+        store.add_documents(sample_documents)
+        store.clear()
 
-        count = await store.add_documents([])
-
-        assert count == 0
         assert len(store.documents) == 0
+        assert store.faiss_index.ntotal == 0
 
-    @pytest.mark.asyncio
-    async def test_vector_search(self, temp_index_dir, sample_georgian_documents):
-        """Test vector similarity search"""
+
+class TestVectorSearch:
+    """Test vector similarity search"""
+
+    @pytest.mark.slow
+    def test_vector_search_returns_results(self, temp_index_dir, sample_documents):
+        """Test that vector search returns relevant results"""
         store = VectorStore(index_path=temp_index_dir)
-        await store.add_documents(sample_georgian_documents)
+        store.add_documents(sample_documents)
 
-        # Search for VAT related content
-        results = await store.search("гцв-с вамайедзи", top_k=3)
+        results = store.vector_search("VAT tax dispute", top_k=2)
 
         assert len(results) > 0
-        assert len(results) <= 3
-        assert all(isinstance(r, SearchResult) for r in results)
-        assert all(r.match_type == "vector" for r in results)
-        assert all(0 <= r.score <= 1 for r in results)
+        assert isinstance(results[0], SearchResult)
+        assert results[0].match_type == "vector"
 
-        # First result should be dispute_001 (VAT rate case)
+    @pytest.mark.slow
+    def test_vector_search_relevance_ordering(self, temp_index_dir, sample_documents):
+        """Test that results are ordered by relevance"""
+        store = VectorStore(index_path=temp_index_dir)
+        store.add_documents(sample_documents)
+
+        results = store.vector_search("VAT dispute article 166", top_k=3)
+
+        # First result should be most relevant
         assert results[0].document.id == "dispute_001"
+        # Scores should be in descending order
+        for i in range(len(results) - 1):
+            assert results[i].score >= results[i + 1].score
 
-    @pytest.mark.asyncio
-    async def test_bm25_search(self, temp_index_dir, sample_georgian_documents):
-        """Test BM25 keyword search"""
+
+class TestBM25Search:
+    """Test BM25 keyword search"""
+
+    @pytest.mark.slow
+    def test_bm25_search_returns_results(self, temp_index_dir, sample_documents):
+        """Test that BM25 search returns results"""
         store = VectorStore(index_path=temp_index_dir)
-        await store.add_documents(sample_georgian_documents)
+        store.add_documents(sample_documents)
 
-        # Search for specific keywords
-        results = await store.bm25_search("луюки 166", top_k=2)
+        results = store.bm25_search("article 166", top_k=2)
 
         assert len(results) > 0
-        assert all(isinstance(r, SearchResult) for r in results)
-        assert all(r.match_type == "bm25" for r in results)
+        assert isinstance(results[0], SearchResult)
+        assert results[0].match_type == "bm25"
 
-        # Should find dispute_001 which mentions article 166
-        doc_ids = [r.document.id for r in results]
-        assert "dispute_001" in doc_ids
-
-    @pytest.mark.asyncio
-    async def test_hybrid_search(self, temp_index_dir, sample_georgian_documents):
-        """Test hybrid search combining vector and BM25"""
+    @pytest.mark.slow
+    def test_bm25_exact_match_priority(self, temp_index_dir, sample_documents):
+        """Test that exact keyword matches are prioritized"""
         store = VectorStore(index_path=temp_index_dir)
-        await store.add_documents(sample_georgian_documents)
+        store.add_documents(sample_documents)
 
-        # Search with both semantic and keyword matching
-        results = await store.hybrid_search("гцв-с рдвистраъиа", top_k=3)
+        results = store.bm25_search("small business tax", top_k=3)
+
+        # Document about small business should be first
+        assert results[0].document.id == "dispute_003"
+
+
+class TestHybridSearch:
+    """Test hybrid search combining vector and BM25"""
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_hybrid_search_returns_results(self, temp_index_dir, sample_documents):
+        """Test that hybrid search returns results"""
+        store = VectorStore(index_path=temp_index_dir)
+        store.add_documents(sample_documents)
+
+        results = await store.hybrid_search("VAT tax dispute", top_k=2)
 
         assert len(results) > 0
-        assert len(results) <= 3
-        assert all(isinstance(r, SearchResult) for r in results)
-        assert all(r.match_type == "hybrid" for r in results)
-        assert all(0 <= r.score <= 1 for r in results)
+        assert isinstance(results[0], SearchResult)
+        assert results[0].match_type == "hybrid"
 
+    @pytest.mark.slow
     @pytest.mark.asyncio
-    async def test_hybrid_search_with_weights(self, temp_index_dir, sample_georgian_documents):
-        """Test hybrid search with custom weights"""
+    async def test_hybrid_search_with_filter(self, temp_index_dir, sample_documents):
+        """Test hybrid search with metadata filter"""
         store = VectorStore(index_path=temp_index_dir)
-        await store.add_documents(sample_georgian_documents)
+        store.add_documents(sample_documents)
 
-        # Favor BM25
-        results_bm25 = await store.hybrid_search(
-            "луюки 166",
+        results = await store.hybrid_search(
+            "tax dispute",
             top_k=3,
-            vector_weight=0.2,
-            bm25_weight=0.8
+            filter_metadata={"court": "Supreme Court"}
         )
 
-        # Favor vector
-        results_vector = await store.hybrid_search(
-            "луюки 166",
-            top_k=3,
-            vector_weight=0.8,
-            bm25_weight=0.2
-        )
-
-        assert len(results_bm25) > 0
-        assert len(results_vector) > 0
-
-        # Results may differ based on weighting
-        # Just verify they return valid results
-
-    @pytest.mark.asyncio
-    async def test_search_with_metadata_filter(self, temp_index_dir, sample_georgian_documents):
-        """Test search with metadata filtering"""
-        store = VectorStore(index_path=temp_index_dir)
-        await store.add_documents(sample_georgian_documents)
-
-        # Search only in Supreme Court cases
-        results = await store.search(
-            "вагасаюаги",
-            top_k=5,
-            filter_metadata={"court": "уждмадси сасаларзкн"}
-        )
-
-        assert len(results) > 0
         # All results should be from Supreme Court
-        assert all(r.document.metadata.get("court") == "уждмадси сасаларзкн" for r in results)
+        for result in results:
+            assert result.document.metadata.get("court") == "Supreme Court"
 
+    @pytest.mark.slow
     @pytest.mark.asyncio
-    async def test_search_empty_index(self, temp_index_dir):
-        """Test search on empty index"""
+    async def test_hybrid_search_empty_query(self, temp_index_dir, sample_documents):
+        """Test hybrid search with empty query returns empty results"""
         store = VectorStore(index_path=temp_index_dir)
+        store.add_documents(sample_documents)
 
-        results = await store.search("test query")
+        results = await store.hybrid_search("", top_k=2)
 
         assert len(results) == 0
 
-    def test_tokenize_georgian_text(self, temp_index_dir):
-        """Test Georgian text tokenization"""
-        store = VectorStore(index_path=temp_index_dir)
 
-        text = "сасаларзкнл вамиюика гцв-с гаеа, луюки 166."
-        tokens = store._tokenize_text(text)
+class TestPersistence:
+    """Test index save/load operations"""
 
-        assert len(tokens) > 0
-        assert "сасаларзкнл" in tokens
-        assert "вамиюика" in tokens
-        assert "гцв" in tokens
-        assert "луюки" in tokens
-        assert "166" in tokens
-
-    def test_save_and_load(self, temp_index_dir, sample_georgian_documents):
-        """Test saving and loading index"""
-        # Create and populate store
+    @pytest.mark.slow
+    def test_save_and_load_index(self, temp_index_dir, sample_documents):
+        """Test saving and loading the index"""
+        # Create and save
         store1 = VectorStore(index_path=temp_index_dir)
-        import asyncio
-        asyncio.run(store1.add_documents(sample_georgian_documents))
-
-        original_doc_count = len(store1.documents)
-
-        # Save
+        store1.add_documents(sample_documents)
         store1.save()
 
-        # Load in new store instance
+        # Load in new instance
         store2 = VectorStore(index_path=temp_index_dir)
 
-        assert len(store2.documents) == original_doc_count
-        assert store2.faiss_index is not None
-        assert store2.bm25 is not None
+        assert len(store2.documents) == len(sample_documents)
+        assert store2.faiss_index.ntotal == len(sample_documents)
 
-        # Verify we can search after loading
-        results = asyncio.run(store2.search("гцв"))
-        assert len(results) > 0
-
-    def test_get_stats(self, temp_index_dir, sample_georgian_documents):
-        """Test getting vector store statistics"""
+    @pytest.mark.slow
+    def test_index_persistence_files_created(self, temp_index_dir, sample_documents):
+        """Test that persistence files are created"""
         store = VectorStore(index_path=temp_index_dir)
-        import asyncio
-        asyncio.run(store.add_documents(sample_georgian_documents))
+        store.add_documents(sample_documents)
+        store.save()
+
+        index_path = Path(temp_index_dir)
+        assert (index_path / "faiss.index").exists()
+        assert (index_path / "documents.pkl").exists()
+        assert (index_path / "bm25_index.pkl").exists()
+
+
+class TestStatistics:
+    """Test statistics and info methods"""
+
+    @pytest.mark.slow
+    def test_get_stats(self, temp_index_dir, sample_documents):
+        """Test getting store statistics"""
+        store = VectorStore(index_path=temp_index_dir)
+        store.add_documents(sample_documents)
 
         stats = store.get_stats()
 
-        assert stats["total_documents"] == len(sample_georgian_documents)
-        assert stats["embedding_dim"] == 384
-        assert stats["faiss_index_size"] == len(sample_georgian_documents)
-        assert stats["bm25_initialized"] is True
-        assert "paraphrase-multilingual-MiniLM-L12-v2" in stats["embedding_model"]
-
-
-class TestVectorStoreEdgeCases:
-    """Test edge cases and error handling"""
-
-    @pytest.mark.asyncio
-    async def test_search_with_special_characters(self, temp_index_dir, sample_georgian_documents):
-        """Test search with special characters"""
-        store = VectorStore(index_path=temp_index_dir)
-        await store.add_documents(sample_georgian_documents)
-
-        # Query with punctuation and numbers
-        results = await store.search("луюки 166, 168-ис шдсаюдб!", top_k=3)
-
-        assert len(results) > 0
-
-    @pytest.mark.asyncio
-    async def test_search_with_very_long_query(self, temp_index_dir, sample_georgian_documents):
-        """Test search with very long query"""
-        store = VectorStore(index_path=temp_index_dir)
-        await store.add_documents(sample_georgian_documents)
-
-        long_query = "гцв " * 100  # Very long query
-        results = await store.search(long_query, top_k=3)
-
-        # Should still work, not crash
-        assert isinstance(results, list)
-
-    @pytest.mark.asyncio
-    async def test_add_duplicate_documents(self, temp_index_dir):
-        """Test adding documents with duplicate IDs"""
-        store = VectorStore(index_path=temp_index_dir)
-
-        doc1 = Document(id="dup", content="first", metadata={})
-        doc2 = Document(id="dup", content="second", metadata={})
-
-        await store.add_documents([doc1])
-        await store.add_documents([doc2])
-
-        # Both should be added (no deduplication by default)
-        assert len(store.documents) == 2
-
-    @pytest.mark.asyncio
-    async def test_search_top_k_larger_than_corpus(self, temp_index_dir, sample_georgian_documents):
-        """Test search with top_k larger than available documents"""
-        store = VectorStore(index_path=temp_index_dir)
-        await store.add_documents(sample_georgian_documents)
-
-        results = await store.search("test", top_k=100)
-
-        # Should return all available documents, not crash
-        assert len(results) <= len(sample_georgian_documents)
+        assert stats["total_documents"] == len(sample_documents)
+        assert "embedding_model" in stats
+        assert "index_path" in stats

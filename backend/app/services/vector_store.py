@@ -23,7 +23,7 @@ from app.core.config import get_settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
-settings = get_settings()
+# Note: get_settings() is called lazily when needed, not at module import time
 
 
 class Document(BaseModel):

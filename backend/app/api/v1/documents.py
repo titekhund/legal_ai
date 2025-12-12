@@ -8,11 +8,13 @@ from collections import OrderedDict
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from app.api.v1.auth import get_current_user
 from app.core import get_logger
+from app.db.models import User
 from app.models import (
     DocumentGenerationRequest,
     DocumentTemplate,
@@ -308,9 +310,14 @@ def markdown_to_docx(markdown_content: str) -> bytes:
 
 
 @router.get("/documents/types", response_model=DocumentTypesResponse)
-async def list_document_types(language: str = "ka"):
+async def list_document_types(
+    language: str = "ka",
+    current_user: User = Depends(get_current_user),
+):
     """
     List all available document types
+
+    **Requires authentication**
 
     Args:
         language: Language filter ('ka' or 'en')
@@ -335,9 +342,14 @@ async def list_document_types(language: str = "ka"):
 
 
 @router.get("/documents/types/{type_id}", response_model=DocumentType)
-async def get_document_type(type_id: str):
+async def get_document_type(
+    type_id: str,
+    current_user: User = Depends(get_current_user),
+):
     """
     Get a specific document type by ID
+
+    **Requires authentication**
 
     Args:
         type_id: Document type identifier
@@ -375,10 +387,13 @@ async def search_templates(
     query: Optional[str] = None,
     document_type: Optional[str] = None,
     language: str = "ka",
-    limit: int = 10
+    limit: int = 10,
+    current_user: User = Depends(get_current_user),
 ):
     """
     Search for document templates
+
+    **Requires authentication**
 
     Args:
         query: Search query (searches in name and category)
@@ -425,9 +440,14 @@ async def search_templates(
 
 
 @router.get("/documents/templates/{template_id}", response_model=DocumentTemplate)
-async def get_template(template_id: str):
+async def get_template(
+    template_id: str,
+    current_user: User = Depends(get_current_user),
+):
     """
     Get a specific template by ID
+
+    **Requires authentication**
 
     Args:
         template_id: Template identifier
@@ -460,9 +480,14 @@ async def get_template(template_id: str):
 
 
 @router.post("/documents/generate", response_model=DocumentGenerationResponse)
-async def generate_document(request: DocumentGenerationRequest):
+async def generate_document(
+    request: DocumentGenerationRequest,
+    current_user: User = Depends(get_current_user),
+):
     """
     Generate a document from a template
+
+    **Requires authentication**
 
     Args:
         request: Document generation request with template ID and variables
@@ -541,10 +566,13 @@ async def generate_document(request: DocumentGenerationRequest):
 @router.get("/documents/download/{document_id}")
 async def download_document(
     document_id: str,
-    format: str = Query("md", description="Download format: md, docx, pdf")
+    format: str = Query("md", description="Download format: md, docx, pdf"),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Download a generated document in specified format
+
+    **Requires authentication**
 
     Args:
         document_id: Document identifier from generation response
@@ -613,9 +641,13 @@ async def download_document(
 
 
 @router.get("/documents/storage/stats")
-async def get_storage_stats():
+async def get_storage_stats(
+    current_user: User = Depends(get_current_user),
+):
     """
     Get document storage statistics (admin/debug endpoint)
+
+    **Requires authentication**
 
     Returns:
         Storage statistics

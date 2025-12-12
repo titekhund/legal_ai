@@ -88,6 +88,15 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Email verification check (prepared for future use)
+    # Currently auto-verified on registration, but infrastructure is ready
+    # Uncomment below to require email verification:
+    # if not user.is_verified:
+    #     raise HTTPException(
+    #         status_code=403,
+    #         detail="Email not verified. Please check your email for verification link.",
+    #     )
+
     return user
 
 

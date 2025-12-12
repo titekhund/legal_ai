@@ -121,9 +121,22 @@ async def chat(
     """
     start_time = time.time()
 
-    # Check usage limits
+    # Validate mode first (cheap check before usage increment)
+    valid_modes = ["tax", "dispute", "document", "auto"]
+    if request.mode not in valid_modes:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid mode '{request.mode}'. Must be one of: {valid_modes}"
+        )
+
+    # Atomically check and increment usage (prevents race conditions)
+    # Increment happens BEFORE LLM call to prevent abuse via request flooding
     auth_service = AuthService(session)
-    is_allowed, reason = await auth_service.check_usage_limit(current_user)
+    is_allowed, reason, updated_user = await auth_service.check_and_increment_usage(
+        user_id=str(current_user.id),
+        endpoint="/v1/chat",
+        request_type=request.mode,
+    )
     if not is_allowed:
         raise HTTPException(
             status_code=429,
@@ -131,18 +144,10 @@ async def chat(
                 "code": "USAGE_LIMIT_EXCEEDED",
                 "message": reason,
                 "usage": {
-                    "daily_used": current_user.daily_requests_count,
-                    "monthly_used": current_user.monthly_requests_count,
+                    "daily_used": updated_user.daily_requests_count if updated_user else 0,
+                    "monthly_used": updated_user.monthly_requests_count if updated_user else 0,
                 }
             }
-        )
-
-    # Validate mode
-    valid_modes = ["tax", "dispute", "document", "auto"]
-    if request.mode not in valid_modes:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid mode '{request.mode}'. Must be one of: {valid_modes}"
         )
 
     # Get orchestrator
@@ -222,14 +227,7 @@ async def chat(
             for case in unified_response.sources.cases
         ]
 
-        # Increment usage counter after successful request
-        await auth_service.increment_usage(
-            user=current_user,
-            endpoint="/v1/chat",
-            request_type=request.mode,
-            processing_time_ms=unified_response.processing_time_ms,
-        )
-
+        # Usage was already incremented atomically at request start
         return ChatResponse(
             answer=unified_response.answer,
             mode_used=unified_response.mode_used.value,

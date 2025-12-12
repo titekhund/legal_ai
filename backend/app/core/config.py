@@ -61,8 +61,8 @@ class Settings(BaseSettings):
 
     # JWT Authentication
     jwt_secret_key: str = Field(
-        "your-secret-key-change-in-production",
-        description="Secret key for JWT token signing"
+        ...,  # Required - no default value
+        description="Secret key for JWT token signing (required, must be set via environment)"
     )
     jwt_algorithm: str = Field("HS256", description="JWT algorithm")
     jwt_access_token_expire_minutes: int = Field(
@@ -136,6 +136,28 @@ class Settings(BaseSettings):
         """Validate rate limit window"""
         if v < 1:
             raise ValueError("rate_limit_window must be at least 1 second")
+        return v
+
+    @field_validator("jwt_secret_key")
+    @classmethod
+    def validate_jwt_secret_key(cls, v: str) -> str:
+        """Validate JWT secret key is secure"""
+        weak_secrets = [
+            "your-secret-key-change-in-production",
+            "secret",
+            "changeme",
+            "password",
+            "123456",
+        ]
+        if v.lower() in weak_secrets:
+            raise ValueError(
+                "JWT secret key is insecure. Please set a strong, random secret key "
+                "via the JWT_SECRET_KEY environment variable."
+            )
+        if len(v) < 32:
+            raise ValueError(
+                "JWT secret key must be at least 32 characters long for security."
+            )
         return v
 
     def get_cors_origins_list(self) -> list[str]:

@@ -8,7 +8,7 @@ from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import get_logger, get_settings
@@ -252,7 +252,7 @@ class AuthService:
 
     async def check_usage_limit(self, user: User) -> tuple[bool, str]:
         """
-        Check if user has exceeded usage limits
+        Check if user has exceeded usage limits (non-atomic, use for display only)
 
         Returns:
             Tuple of (is_allowed, reason_if_not_allowed)
@@ -270,6 +270,84 @@ class AuthService:
 
         return True, ""
 
+    async def check_and_increment_usage(
+        self,
+        user_id: str,
+        endpoint: str,
+        request_type: str = "chat",
+        tokens_used: Optional[int] = None,
+        processing_time_ms: Optional[int] = None,
+    ) -> tuple[bool, str, Optional[User]]:
+        """
+        Atomically check usage limits and increment if allowed.
+        Uses SELECT FOR UPDATE to prevent race conditions.
+
+        Returns:
+            Tuple of (is_allowed, reason_if_not_allowed, updated_user)
+        """
+        try:
+            user_uuid = uuid.UUID(user_id)
+        except ValueError:
+            return False, "Invalid user ID", None
+
+        now = datetime.now(timezone.utc)
+
+        # Lock the user row for update (prevents concurrent modifications)
+        result = await self.session.execute(
+            select(User)
+            .where(User.id == user_uuid)
+            .with_for_update()
+        )
+        user = result.scalar_one_or_none()
+
+        if not user:
+            return False, "User not found", None
+
+        # Reset daily counter if a day has passed
+        if (now - user.daily_requests_reset_at).days >= 1:
+            user.daily_requests_count = 0
+            user.daily_requests_reset_at = now
+            logger.info(f"Daily counter reset for user {user.email}")
+
+        # Reset monthly counter if a month has passed
+        if (now - user.monthly_requests_reset_at).days >= 30:
+            user.monthly_requests_count = 0
+            user.monthly_requests_reset_at = now
+            logger.info(f"Monthly counter reset for user {user.email}")
+
+        # Check daily limit
+        if user.daily_requests_count >= settings.daily_request_limit:
+            await self.session.commit()  # Release lock
+            return False, "Daily request limit reached", user
+
+        # Check monthly limit
+        if user.monthly_requests_count >= settings.monthly_request_limit:
+            await self.session.commit()  # Release lock
+            return False, "Monthly request limit reached", user
+
+        # Increment counters (within the lock)
+        user.daily_requests_count += 1
+        user.monthly_requests_count += 1
+        user.total_requests_count += 1
+
+        # Create usage record
+        usage_record = UsageRecord(
+            user_id=user.id,
+            endpoint=endpoint,
+            request_type=request_type,
+            tokens_used=tokens_used,
+            processing_time_ms=processing_time_ms,
+        )
+        self.session.add(usage_record)
+
+        await self.session.commit()
+        logger.debug(
+            f"Usage atomically incremented for {user.email}: "
+            f"daily={user.daily_requests_count}, monthly={user.monthly_requests_count}"
+        )
+
+        return True, "", user
+
     async def increment_usage(
         self,
         user: User,
@@ -279,7 +357,8 @@ class AuthService:
         processing_time_ms: Optional[int] = None,
     ) -> None:
         """
-        Increment user's usage counters and record the request
+        Increment user's usage counters and record the request.
+        DEPRECATED: Use check_and_increment_usage for atomic operations.
         """
         # Reset counters if needed
         await self.reset_usage_counters(user)

@@ -54,28 +54,34 @@ async def service_status():
 
     if tax_service:
         tax_status = tax_service.get_status()
-        tax_ready = tax_status.get("file_upload_status") == "ready"
+        file_status = tax_status.get("file_upload_status", "unknown")
+        tax_ready = file_status == "ready"
 
         tax_service_status = {
             "ready": tax_ready,
+            "status": file_status,
             "model": tax_status.get("model_name"),
             "file_uploaded": tax_ready,
             "file_path": tax_status.get("tax_code_path"),
+            "file_exists": tax_status.get("file_exists", False),
         }
     else:
         tax_service_status = {
             "ready": False,
-            "message": "Tax service not initialized"
+            "status": "initializing",
+            "message": "Tax service initializing in background"
         }
 
     return {
         "tax_service": tax_service_status,
         "dispute_service": {
             "ready": False,
+            "status": "pending",
             "message": "Coming in Phase 2"
         },
         "document_service": {
             "ready": False,
+            "status": "pending",
             "message": "Coming in Phase 3"
         },
         "timestamp": datetime.utcnow().isoformat() + "Z"

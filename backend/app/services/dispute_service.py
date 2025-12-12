@@ -3,15 +3,17 @@ Dispute RAG Service for Legal Case Retrieval and Analysis
 
 This service combines vector search with LLM generation to answer
 questions about Georgian tax dispute cases using RAG (Retrieval-Augmented Generation).
+
+Note: Using dataclasses instead of Pydantic to avoid schema generation recursion
+issues that occur in certain Python/Pydantic version combinations.
 """
 from __future__ import annotations
 
 import re
 import time
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Optional, List, Dict, Any, TYPE_CHECKING
-
-from pydantic import BaseModel, Field
 
 # Use TYPE_CHECKING to avoid heavy imports at module load time
 # This prevents sentence_transformers from being loaded when this module is imported
@@ -51,107 +53,58 @@ DISPUTE_SYSTEM_PROMPT = """
 """
 
 
-class DisputeFilters(BaseModel):
+@dataclass
+class DisputeFilters:
     """Filters for dispute case search"""
-    court: Optional[str] = Field(
-        None,
-        description="Court name (e.g., 'áÐÙÝÜáâØâãêØÝ', 'ãÖÔÜÐÔáØ')"
-    )
-    date_from: Optional[date] = Field(
-        None,
-        description="Filter cases from this date onwards"
-    )
-    date_to: Optional[date] = Field(
-        None,
-        description="Filter cases up to this date"
-    )
-    cited_articles: Optional[List[str]] = Field(
-        None,
-        description="Filter by cited tax code articles"
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "court": "ãÖÔÜÐÔáØ áÐáÐÛÐà×ÚÝ",
-                "date_from": "2023-01-01",
-                "date_to": "2023-12-31",
-                "cited_articles": ["166", "168"]
-            }
-        }
+    court: Optional[str] = None
+    date_from: Optional[date] = None
+    date_to: Optional[date] = None
+    cited_articles: Optional[List[str]] = None
 
 
-class DisputeCase(BaseModel):
+@dataclass
+class DisputeCase:
     """Dispute case model"""
-    case_id: str = Field(..., description="Unique case identifier")
-    court: str = Field(..., description="Court name")
-    case_date: date = Field(..., description="Case decision date")
-    summary: str = Field(..., description="Case summary/excerpt")
-    cited_articles: List[str] = Field(
-        default_factory=list,
-        description="Tax code articles cited in case"
-    )
-    relevance_score: float = Field(..., description="Relevance to query (0-1)")
-    full_text_available: bool = Field(
-        default=True,
-        description="Whether full case text is available"
-    )
+    case_id: str
+    court: str
+    case_date: date
+    summary: str
+    relevance_score: float
+    cited_articles: List[str] = field(default_factory=list)
+    full_text_available: bool = True
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "case_id": "001",
-                "court": "ãÖÔÜÐÔáØ áÐáÐÛÐà×ÚÝ",
-                "case_date": "2023-05-15",
-                "summary": "áÐáÐÛÐà×ÚÝÛ ÒÐÜØîØÚÐ ÓæÒ-á ÓÐÕÐ...",
-                "cited_articles": ["166", "165"],
-                "relevance_score": 0.92,
-                "full_text_available": True
-            }
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for API responses"""
+        return {
+            "case_id": self.case_id,
+            "court": self.court,
+            "case_date": self.case_date.isoformat() if self.case_date else None,
+            "summary": self.summary,
+            "cited_articles": self.cited_articles,
+            "relevance_score": self.relevance_score,
+            "full_text_available": self.full_text_available
         }
 
 
-class DisputeResponse(BaseModel):
+@dataclass
+class DisputeResponse:
     """Response from dispute query"""
-    answer: str = Field(..., description="Generated answer to the question")
-    cases_cited: List[DisputeCase] = Field(
-        default_factory=list,
-        description="Relevant cases cited in answer"
-    )
-    relevant_tax_articles: List[str] = Field(
-        default_factory=list,
-        description="Tax code articles mentioned"
-    )
-    confidence: float = Field(
-        ...,
-        description="Confidence in answer quality (0-1)"
-    )
-    model_used: str = Field(..., description="LLM model used for generation")
-    processing_time_ms: int = Field(
-        ...,
-        description="Total processing time in milliseconds"
-    )
+    answer: str
+    confidence: float
+    model_used: str
+    processing_time_ms: int
+    cases_cited: List[DisputeCase] = field(default_factory=list)
+    relevant_tax_articles: List[str] = field(default_factory=list)
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "answer": "ÓæÒ-á ÒÐÜÐÙÕÔ×Ø ÐàØá 18%...",
-                "cases_cited": [
-                    {
-                        "case_id": "001",
-                        "court": "ãÖÔÜÐÔáØ áÐáÐÛÐà×ÚÝ",
-                        "date": "2023-05-15",
-                        "summary": "...",
-                        "cited_articles": ["166"],
-                        "relevance_score": 0.92,
-                        "full_text_available": True
-                    }
-                ],
-                "relevant_tax_articles": ["166", "165"],
-                "confidence": 0.88,
-                "model_used": "gemini-pro",
-                "processing_time_ms": 1250
-            }
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for API responses"""
+        return {
+            "answer": self.answer,
+            "cases_cited": [case.to_dict() for case in self.cases_cited],
+            "relevant_tax_articles": self.relevant_tax_articles,
+            "confidence": self.confidence,
+            "model_used": self.model_used,
+            "processing_time_ms": self.processing_time_ms
         }
 
 

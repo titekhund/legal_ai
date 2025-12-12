@@ -1,0 +1,71 @@
+# This file specifies files that are *not* uploaded to Google Cloud
+# using gcloud. It follows the same syntax as .gitignore.
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing - exclude from Cloud Build
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+pytest.ini
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Documentation
+docs/
+*.md
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker (not needed for Cloud Build)
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Deployment scripts (not needed in container)
+deploy-gcp.sh
+cloudbuild.yaml
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Misc
+.DS_Store
+*.bak
+*.tmp

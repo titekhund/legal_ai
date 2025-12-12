@@ -11,6 +11,20 @@ This module provides fixtures for:
 
 import os
 import sys
+
+# ===========================================================================
+# CRITICAL: Set environment variables BEFORE any app imports
+# This must happen at module load time, not in a fixture
+# ===========================================================================
+os.environ.setdefault("GEMINI_API_KEY", "test-gemini-key-for-testing")
+os.environ.setdefault("ANTHROPIC_API_KEY", "test-claude-key-for-testing")
+os.environ.setdefault("ADMIN_API_KEY", "test-admin-key")
+os.environ.setdefault("ENVIRONMENT", "dev")
+os.environ.setdefault("LOG_LEVEL", "DEBUG")
+os.environ.setdefault("CORS_ORIGINS", "http://localhost:3000,http://localhost:8000")
+os.environ.setdefault("RATE_LIMIT_REQUESTS", "100")
+os.environ.setdefault("RATE_LIMIT_WINDOW", "60")
+
 import pytest
 import asyncio
 from typing import AsyncGenerator, Generator, Dict, Any

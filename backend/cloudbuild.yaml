@@ -7,7 +7,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/legal-ai-backend']
 
-  # Deploy container image to Cloud Run
+  # Deploy container image to Cloud Run (initial deployment without secrets)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -29,16 +29,50 @@ steps:
       - '300'
       - '--set-env-vars'
       - 'ENVIRONMENT=prod,LOG_LEVEL=INFO,CORS_ORIGINS=*'
-      - '--set-secrets'
-      - 'GEMINI_API_KEY=gemini-api-key:latest'
 
-# Note: Before deployment, create the secret in Secret Manager:
-# gcloud secrets create gemini-api-key --replication-policy="automatic"
-# echo -n "your-api-key" | gcloud secrets versions add gemini-api-key --data-file=-
-# Grant Cloud Run access to the secret:
-# gcloud secrets add-iam-policy-binding gemini-api-key \
-#   --member="serviceAccount:YOUR-PROJECT-NUMBER-compute@developer.gserviceaccount.com" \
-#   --role="roles/secretmanager.secretAccessor"
+  # Update with secrets (only runs if secret exists)
+  # This step uses || true to continue even if secret doesn't exist yet
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        if gcloud secrets describe gemini-api-key --project=$PROJECT_ID >/dev/null 2>&1; then
+          echo "Secret found, updating Cloud Run service with secret..."
+          gcloud run services update legal-ai-backend \
+            --region=us-central1 \
+            --update-secrets=GEMINI_API_KEY=gemini-api-key:latest
+        else
+          echo "WARNING: Secret 'gemini-api-key' not found in Secret Manager."
+          echo "The service is deployed but GEMINI_API_KEY is not configured."
+          echo "To add the secret, run:"
+          echo "  gcloud secrets create gemini-api-key --replication-policy=automatic"
+          echo "  echo -n 'your-api-key' | gcloud secrets versions add gemini-api-key --data-file=-"
+          echo "  gcloud run services update legal-ai-backend --region=us-central1 --update-secrets=GEMINI_API_KEY=gemini-api-key:latest"
+        fi
+
+# =============================================================================
+# IMPORTANT: Secret Manager Setup (Required for API functionality)
+# =============================================================================
+# Before the API can work, you must create the secret in Secret Manager:
+#
+# 1. Create the secret:
+#    gcloud secrets create gemini-api-key --replication-policy="automatic"
+#
+# 2. Add your API key value:
+#    echo -n "your-actual-gemini-api-key" | gcloud secrets versions add gemini-api-key --data-file=-
+#
+# 3. Grant Cloud Run service account access to the secret:
+#    PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
+#    gcloud secrets add-iam-policy-binding gemini-api-key \
+#      --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+#      --role="roles/secretmanager.secretAccessor"
+#
+# 4. Re-run the deployment or manually update:
+#    gcloud run services update legal-ai-backend \
+#      --region=us-central1 \
+#      --update-secrets=GEMINI_API_KEY=gemini-api-key:latest
+# =============================================================================
 
 images:
   - 'gcr.io/$PROJECT_ID/legal-ai-backend'

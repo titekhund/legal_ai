@@ -8,11 +8,15 @@ questions about Georgian tax dispute cases using RAG (Retrieval-Augmented Genera
 import re
 import time
 from datetime import date, datetime
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
-from app.services.vector_store import VectorStore, SearchResult
+# Use TYPE_CHECKING to avoid heavy imports at module load time
+# This prevents sentence_transformers from being loaded when this module is imported
+if TYPE_CHECKING:
+    from app.services.vector_store import VectorStore, SearchResult
+
 from app.services.llm_client import GeminiClient, ClaudeClient
 from app.core.logging import get_logger
 
@@ -160,7 +164,7 @@ class DisputeService:
 
     def __init__(
         self,
-        vector_store: Optional[VectorStore] = None,
+        vector_store: Optional["VectorStore"] = None,
         gemini_client: Optional[GeminiClient] = None,
         claude_client: Optional[ClaudeClient] = None
     ):
@@ -305,9 +309,9 @@ class DisputeService:
 
     def _apply_filters(
         self,
-        results: List[SearchResult],
+        results: List["SearchResult"],
         filters: Optional[DisputeFilters]
-    ) -> List[SearchResult]:
+    ) -> List["SearchResult"]:
         """Apply date and article filters to search results"""
         if not filters:
             return results
@@ -345,7 +349,7 @@ class DisputeService:
 
     def _convert_to_dispute_cases(
         self,
-        search_results: List[SearchResult]
+        search_results: List["SearchResult"]
     ) -> List[DisputeCase]:
         """Convert search results to DisputeCase objects"""
         cases = []

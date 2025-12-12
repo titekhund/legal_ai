@@ -39,3 +39,4 @@ respx==0.20.2
 aioresponses==0.7.6
 freezegun==1.2.2
 faker==22.0.0
+google-api-python-client>=2.100.0

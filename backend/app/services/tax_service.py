@@ -8,6 +8,8 @@ from typing import Any, Dict, List, Optional
 from functools import lru_cache
 
 import google.generativeai as genai
+import os
+from app.services.drive_service import DriveService
 
 from app.core import (
     ConfigurationError,
@@ -109,7 +111,20 @@ class TaxCodeService:
             True if successful, False otherwise
         """
         try:
-            # Check if file exists
+            # If file doesn't exist locally, try downloading from Google Drive
+            if not self.tax_code_path.exists():
+                drive_folder_id = os.getenv('DRIVE_FOLDER_ID')
+                if drive_folder_id:
+                    logger.info(f"PDF not found locally. Attempting to download from Google Drive...")
+                    drive_service = DriveService(folder_id=drive_folder_id)
+                    if drive_service.initialize():
+                        filename = self.tax_code_path.name
+                        if drive_service.download_file_by_name(filename, str(self.tax_code_path)):
+                            logger.info("PDF downloaded successfully from Google Drive")
+                        else:
+                            logger.warning("Failed to download PDF from Google Drive")
+            
+            # Check if file exists (now it might have been downloaded)
             if not self.tax_code_path.exists():
                 logger.error(f"Tax code file not found at: {self.tax_code_path}")
                 self.file_upload_status = "file_not_found"
@@ -341,7 +356,20 @@ class TaxCodeService:
             True if service is healthy, False otherwise
         """
         try:
-            # Check if file exists
+            # If file doesn't exist locally, try downloading from Google Drive
+            if not self.tax_code_path.exists():
+                drive_folder_id = os.getenv('DRIVE_FOLDER_ID')
+                if drive_folder_id:
+                    logger.info(f"PDF not found locally. Attempting to download from Google Drive...")
+                    drive_service = DriveService(folder_id=drive_folder_id)
+                    if drive_service.initialize():
+                        filename = self.tax_code_path.name
+                        if drive_service.download_file_by_name(filename, str(self.tax_code_path)):
+                            logger.info("PDF downloaded successfully from Google Drive")
+                        else:
+                            logger.warning("Failed to download PDF from Google Drive")
+            
+            # Check if file exists (now it might have been downloaded)
             if not self.tax_code_path.exists():
                 logger.warning(f"Health check failed: file not found at {self.tax_code_path}")
                 return False

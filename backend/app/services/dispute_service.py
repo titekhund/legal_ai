@@ -4,6 +4,7 @@ Dispute RAG Service for Legal Case Retrieval and Analysis
 This service combines vector search with LLM generation to answer
 questions about Georgian tax dispute cases using RAG (Retrieval-Augmented Generation).
 """
+from __future__ import annotations
 
 import re
 import time

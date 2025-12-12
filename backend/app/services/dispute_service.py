@@ -80,7 +80,7 @@ class DisputeCase(BaseModel):
     """Dispute case model"""
     case_id: str = Field(..., description="Unique case identifier")
     court: str = Field(..., description="Court name")
-    date: date = Field(..., description="Case decision date")
+    case_date: date = Field(..., description="Case decision date")
     summary: str = Field(..., description="Case summary/excerpt")
     cited_articles: List[str] = Field(
         default_factory=list,
@@ -97,7 +97,7 @@ class DisputeCase(BaseModel):
             "example": {
                 "case_id": "001",
                 "court": "ãÖÔÜÐÔáØ áÐáÐÛÐà×ÚÝ",
-                "date": "2023-05-15",
+                "case_date": "2023-05-15",
                 "summary": "áÐáÐÛÐà×ÚÝÛ ÒÐÜØîØÚÐ ÓæÒ-á ÓÐÕÐ...",
                 "cited_articles": ["166", "165"],
                 "relevance_score": 0.92,
@@ -160,7 +160,7 @@ class DisputeService:
 
     def __init__(
         self,
-        vector_store: VectorStore,
+        vector_store: Optional[VectorStore] = None,
         gemini_client: Optional[GeminiClient] = None,
         claude_client: Optional[ClaudeClient] = None
     ):
@@ -168,7 +168,7 @@ class DisputeService:
         Initialize dispute service
 
         Args:
-            vector_store: Vector store with dispute cases
+            vector_store: Vector store with dispute cases (optional, can be initialized later)
             gemini_client: Gemini LLM client (primary)
             claude_client: Claude LLM client (fallback)
         """
@@ -187,6 +187,12 @@ class DisputeService:
             True if initialization successful
         """
         try:
+            # Check if vector store is configured
+            if self.vector_store is None:
+                logger.warning("No vector store configured - dispute service will be limited")
+                self._initialized = True
+                return True
+
             # Check if vector store has documents
             stats = self.vector_store.get_stats()
             doc_count = stats.get("total_documents", 0)
@@ -226,6 +232,17 @@ class DisputeService:
 
         if not self._initialized:
             await self.initialize()
+
+        # Check if vector store is available
+        if self.vector_store is None:
+            return DisputeResponse(
+                answer="სადავო საქმეების სერვისი ამჟამად მიუწვდომელია.",
+                cases_cited=[],
+                relevant_tax_articles=[],
+                confidence=0.0,
+                model_used="none",
+                processing_time_ms=int((time.time() - start_time) * 1000)
+            )
 
         logger.info(f"Processing dispute query: {question[:100]}...")
 
@@ -346,7 +363,7 @@ class DisputeService:
             case = DisputeCase(
                 case_id=metadata.get("case_id", result.document.id),
                 court=metadata.get("court", "ãêÜÝÑØ áÐáÐÛÐà×ÚÝ"),
-                date=case_date,
+                case_date=case_date,
                 summary=result.document.content[:500],  # First 500 chars as summary
                 cited_articles=metadata.get("cited_articles", []),
                 relevance_score=result.score,
@@ -365,7 +382,7 @@ class DisputeService:
             context_parts.append(
                 f"áÐåÛÔ #{i} (ID: {case.case_id})\n"
                 f"áÐáÐÛÐà×ÚÝ: {case.court}\n"
-                f"×ÐàØæØ: {case.date}\n"
+                f"×ÐàØæØ: {case.case_date}\n"
                 f"êØâØàÔÑãÚØ ÛãîÚÔÑØ: {', '.join(case.cited_articles) if case.cited_articles else 'Ðà ÐàØá ÛØ×Ø×ÔÑãÚØ'}\n"
                 f"èØÜÐÐàáØ: {case.summary}\n"
             )
@@ -453,6 +470,11 @@ class DisputeService:
         if not self._initialized:
             await self.initialize()
 
+        # Check if vector store is available
+        if self.vector_store is None:
+            logger.warning("Vector store not configured, cannot retrieve case")
+            return None
+
         # Search through all documents
         for doc in self.vector_store.documents:
             if doc.metadata.get("case_id") == case_id or doc.id == case_id:
@@ -468,7 +490,7 @@ class DisputeService:
                 return DisputeCase(
                     case_id=metadata.get("case_id", doc.id),
                     court=metadata.get("court", "ãêÜÝÑØ áÐáÐÛÐà×ÚÝ"),
-                    date=case_date,
+                    case_date=case_date,
                     summary=doc.content,  # Full content as summary
                     cited_articles=metadata.get("cited_articles", []),
                     relevance_score=1.0,  # Direct lookup, perfect match
@@ -485,6 +507,18 @@ class DisputeService:
         Returns:
             Dictionary with status information
         """
+        if self.vector_store is None:
+            return {
+                "initialized": self._initialized,
+                "ready": False,
+                "total_cases": 0,
+                "embedding_model": "not_configured",
+                "index_path": "not_configured",
+                "gemini_available": self.gemini_client is not None,
+                "claude_available": self.claude_client is not None,
+                "message": "Vector store not configured"
+            }
+
         stats = self.vector_store.get_stats()
 
         return {

@@ -85,3 +85,9 @@ logs/
 # Temporary files
 tmp/
 temp/
+backend/data/tax_code/*.pdf
+*.pdf
+*.backup*
+backend/data/tax_code/*.pdf
+*.pdf
+*.backup*

@@ -5,12 +5,15 @@ import time
 import uuid
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.auth import get_current_user
 from app.core import LLMError, get_logger
+from app.db import get_async_session, User
 from app.models import CitedArticle, QueryMode
-from app.services import Orchestrator, TaxCodeService
+from app.services import AuthService, Orchestrator, TaxCodeService
 from app.storage import get_conversation_store
 
 logger = get_logger(__name__)
@@ -91,9 +94,15 @@ class ChatResponse(BaseModel):
 
 
 @router.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
+async def chat(
+    request: ChatRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_async_session),
+):
     """
     Chat endpoint for legal AI assistant
+
+    **Requires authentication** - Include JWT token in Authorization header.
 
     Supports multiple modes:
     - Tax mode: Georgian Tax Code queries
@@ -108,16 +117,37 @@ async def chat(request: ChatRequest):
         Chat response with answer, sources, and metadata
 
     Raises:
-        HTTPException: If service not available or error occurs
+        HTTPException: If service not available, usage limit exceeded, or error occurs
     """
     start_time = time.time()
 
-    # Validate mode
+    # Validate mode first (cheap check before usage increment)
     valid_modes = ["tax", "dispute", "document", "auto"]
     if request.mode not in valid_modes:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid mode '{request.mode}'. Must be one of: {valid_modes}"
+        )
+
+    # Atomically check and increment usage (prevents race conditions)
+    # Increment happens BEFORE LLM call to prevent abuse via request flooding
+    auth_service = AuthService(session)
+    is_allowed, reason, updated_user = await auth_service.check_and_increment_usage(
+        user_id=str(current_user.id),
+        endpoint="/v1/chat",
+        request_type=request.mode,
+    )
+    if not is_allowed:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "code": "USAGE_LIMIT_EXCEEDED",
+                "message": reason,
+                "usage": {
+                    "daily_used": updated_user.daily_requests_count if updated_user else 0,
+                    "monthly_used": updated_user.monthly_requests_count if updated_user else 0,
+                }
+            }
         )
 
     # Get orchestrator
@@ -197,6 +227,7 @@ async def chat(request: ChatRequest):
             for case in unified_response.sources.cases
         ]
 
+        # Usage was already incremented atomically at request start
         return ChatResponse(
             answer=unified_response.answer,
             mode_used=unified_response.mode_used.value,

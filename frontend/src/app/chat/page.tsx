@@ -7,6 +7,7 @@
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useChat } from '@/hooks/useChat';
+import { useAuth } from '@/contexts/AuthContext';
 import { MessageBubble } from '@/components/chat/MessageBubble';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { CitationPanel } from '@/components/chat/CitationPanel';
@@ -24,11 +25,13 @@ const EXAMPLE_QUESTIONS = [
 function ChatContent() {
   const searchParams = useSearchParams();
   const conversationId = searchParams.get('id') || undefined;
+  const { refreshUsage } = useAuth();
 
   const { messages, isLoading, error, sendMessage } = useChat({
     conversationId,
     mode: 'tax',
     language: 'ka',
+    onSuccess: refreshUsage, // Refresh usage after successful message
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);

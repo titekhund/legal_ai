@@ -3,6 +3,7 @@
  */
 import type { Metadata, Viewport } from 'next';
 import { Toaster } from 'react-hot-toast';
+import { Providers } from '@/components/Providers';
 import './globals.css';
 
 // Use system fonts as fallback for Georgian support
@@ -57,7 +58,9 @@ export default function RootLayout({
         />
       </head>
       <body style={{ fontFamily: fontVariable }}>
-        {children}
+        <Providers>
+          {children}
+        </Providers>
         <Toaster
           position="top-right"
           toastOptions={{

@@ -13,6 +13,7 @@ export interface UseChatOptions {
   mode?: QueryMode;
   language?: 'ka' | 'en';
   onError?: (error: Error) => void;
+  onSuccess?: () => void;
 }
 
 export interface UseChatReturn {
@@ -85,6 +86,11 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
           mode_used: response.mode_used,
         };
         setMessages((prev) => [...prev, assistantMessage]);
+
+        // Call success callback if provided (e.g., to refresh usage)
+        if (options.onSuccess) {
+          options.onSuccess();
+        }
       } catch (err) {
         const errorObj = err instanceof Error ? err : new Error('Unknown error');
         setError(errorObj);

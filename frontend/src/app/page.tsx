@@ -2,38 +2,21 @@
  * Landing page
  */
 
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Header } from '@/components/layout/Header';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Home() {
+  const { isAuthenticated, isLoading } = useAuth();
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"
-                />
-              </svg>
-            </div>
-            <span className="text-xl font-semibold text-text">
-              {process.env.NEXT_PUBLIC_APP_NAME || 'TaxCode AI'}
-            </span>
-          </div>
-        </div>
-      </header>
+      {/* Header with auth */}
+      <Header />
 
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -44,24 +27,64 @@ export default function Home() {
           <p className="text-xl text-text-light mb-8 max-w-3xl mx-auto">
             დასვით ნებისმიერი კითხვა საქართველოს საგადასახადო კანონმდებლობის შესახებ
           </p>
-          <Link href="/chat">
-            <Button size="lg" className="text-lg px-8">
-              დაწყება
-              <svg
-                className="w-5 h-5 ml-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 7l5 5m0 0l-5 5m5-5H6"
-                />
-              </svg>
-            </Button>
-          </Link>
+
+          {!isLoading && (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              {isAuthenticated ? (
+                <Link href="/chat">
+                  <Button size="lg" className="text-lg px-8">
+                    ჩატის დაწყება
+                    <svg
+                      className="w-5 h-5 ml-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 7l5 5m0 0l-5 5m5-5H6"
+                      />
+                    </svg>
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/auth/register">
+                    <Button size="lg" className="text-lg px-8">
+                      უფასო რეგისტრაცია
+                      <svg
+                        className="w-5 h-5 ml-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 7l5 5m0 0l-5 5m5-5H6"
+                        />
+                      </svg>
+                    </Button>
+                  </Link>
+                  <Link href="/auth/login">
+                    <Button variant="outline" size="lg" className="text-lg px-8">
+                      შესვლა
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Free tier info */}
+          {!isAuthenticated && !isLoading && (
+            <p className="mt-4 text-sm text-gray-500">
+              უფასო ანგარიშით მიიღებთ 50 მოთხოვნას დღეში
+            </p>
+          )}
         </div>
 
         {/* Features */}
@@ -172,7 +195,7 @@ export default function Home() {
                   1
                 </span>
                 <span>
-                  დაუსვით კითხვა საქართველოს საგადასახადო კოდექსთან დაკავშირებით
+                  დარეგისტრირდით უფასოდ თქვენი ელ-ფოსტით
                 </span>
               </li>
               <li className="flex gap-3">
@@ -180,7 +203,7 @@ export default function Home() {
                   2
                 </span>
                 <span>
-                  AI სისტემა გაანალიზებს თქვენს კითხვას და მოიძიებს შესაბამის ინფორმაციას
+                  დაუსვით კითხვა საქართველოს საგადასახადო კოდექსთან დაკავშირებით
                 </span>
               </li>
               <li className="flex gap-3">
@@ -188,7 +211,7 @@ export default function Home() {
                   3
                 </span>
                 <span>
-                  მიიღეთ დეტალური პასუხი კონკრეტული მუხლებისა და ნორმების მითითებით
+                  AI სისტემა გაანალიზებს თქვენს კითხვას და მოიძიებს შესაბამის ინფორმაციას
                 </span>
               </li>
               <li className="flex gap-3">
@@ -196,7 +219,7 @@ export default function Home() {
                   4
                 </span>
                 <span>
-                  გადადით matsne.gov.ge-ზე სრული ტექსტის სანახავად
+                  მიიღეთ დეტალური პასუხი კონკრეტული მუხლებისა და ნორმების მითითებით
                 </span>
               </li>
             </ol>

@@ -105,14 +105,14 @@ def create_access_token(user_id: str, email: str) -> tuple[str, datetime]:
     Returns:
         Tuple of (token, expiration_datetime)
     """
-    expires_at = datetime.now(timezone.utc) + timedelta(
+    expires_at = datetime.utcnow() + timedelta(
         minutes=settings.jwt_access_token_expire_minutes
     )
     to_encode = {
         "sub": user_id,
         "email": email,
         "exp": expires_at,
-        "iat": datetime.now(timezone.utc),
+        "iat": datetime.utcnow(),
     }
     token = jwt.encode(
         to_encode,
@@ -177,8 +177,8 @@ class AuthService:
             full_name=user_data.full_name,
             is_active=True,
             is_verified=True,  # Auto-verify for now
-            daily_requests_reset_at=datetime.now(timezone.utc),
-            monthly_requests_reset_at=datetime.now(timezone.utc),
+            daily_requests_reset_at=datetime.utcnow(),
+            monthly_requests_reset_at=datetime.utcnow(),
         )
 
         self.session.add(user)
@@ -208,7 +208,7 @@ class AuthService:
             return None
 
         # Update last login
-        user.last_login_at = datetime.now(timezone.utc)
+        user.last_login_at = datetime.utcnow()
         await self.session.commit()
 
         return user
@@ -222,19 +222,15 @@ class AuthService:
 
     async def get_user_by_id(self, user_id: str) -> Optional[User]:
         """Get user by ID"""
-        try:
-            user_uuid = uuid.UUID(user_id)
-        except ValueError:
-            return None
 
         result = await self.session.execute(
-            select(User).where(User.id == user_uuid)
+            select(User).where(User.id == user_id)
         )
         return result.scalar_one_or_none()
 
     async def reset_usage_counters(self, user: User) -> None:
         """Reset usage counters if the reset period has passed"""
-        now = datetime.now(timezone.utc)
+        now = datetime.utcnow()
 
         # Reset daily counter if a day has passed
         if (now - user.daily_requests_reset_at).days >= 1:
@@ -285,17 +281,13 @@ class AuthService:
         Returns:
             Tuple of (is_allowed, reason_if_not_allowed, updated_user)
         """
-        try:
-            user_uuid = uuid.UUID(user_id)
-        except ValueError:
-            return False, "Invalid user ID", None
 
-        now = datetime.now(timezone.utc)
+        now = datetime.utcnow()
 
         # Lock the user row for update (prevents concurrent modifications)
         result = await self.session.execute(
             select(User)
-            .where(User.id == user_uuid)
+            .where(User.id == user_id)
             .with_for_update()
         )
         user = result.scalar_one_or_none()
@@ -432,7 +424,7 @@ class AuthService:
             return None
 
         token, expires_at = create_access_token(str(user.id), user.email)
-        expires_in = int((expires_at - datetime.now(timezone.utc)).total_seconds())
+        expires_in = int((expires_at - datetime.utcnow()).total_seconds())
 
         return TokenResponse(
             access_token=token,
